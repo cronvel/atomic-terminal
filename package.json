@@ -22,6 +22,7 @@
     "mocha": "^1.21.4"
   },
   "scripts": {
+    "install": "electron-rebuild -v 0.26.0 -m node_modules",
     "test": "mocha"
   },
   "repository": {
