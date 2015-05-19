@@ -1,0 +1,61 @@
+
+#content {
+	margin: 2px;
+}
+
+#content table {
+	table-layout: fixed;
+	border-collapse: collapse;
+	margin: 0;
+	padding: 0;
+}
+
+#content td {
+	margin: 0px;
+	padding: 0px;
+	border: none;
+}
+
+#content td div {
+	margin: 0px;
+	padding: 0px;
+	border: none;
+	overflow: visible;
+	text-align: center;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+.dim {
+	opacity: 0.6;
+}
+
+.italic {
+	font-style: italic;
+}
+
+.underline {
+	text-decoration: underline;
+}
+
+.blink {
+	-webkit-animation: blink .75s linear infinite;
+	animation: blink .75s linear infinite;
+}
+
+.inverse {
+	-webkit-filter: invert(100%);
+	filter: invert(100%);
+}
+
+.hidden {
+	visibility: hidden;
+}
+
+.strike {
+	text-decoration: line-through;
+}
+
+

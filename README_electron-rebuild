@@ -1,0 +1,7 @@
+
+Do not call ./node_modules/.bin/electron-rebuild without argument, it will fail.
+
+Pass to it explicit electron's version and module's directory:
+
+./node_modules/.bin/electron-rebuild -v 0.26.0 -m node_modules
+
