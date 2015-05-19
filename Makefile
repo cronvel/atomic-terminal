@@ -59,7 +59,7 @@ bdd-spec.md: log/npm-dev-install.log *.js front/js/*.js test/*.js
 	cd test ; ${MOCHA} *.js -R markdown > ../bdd-spec.md
 
 # Upgrade version in package.json
-log/upgrade-package.log: *.js front/* front/*/*.js test/*.js documentation.md
+log/upgrade-package.log: Makefile *.js front/* front/*/*.js test/*.js documentation.md
 	npm version patch -m "Upgrade package.json version to %s" | tee log/upgrade-package.log ; exit $${PIPESTATUS[0]}
 
 # Publish to NPM
