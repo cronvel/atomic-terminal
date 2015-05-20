@@ -91,8 +91,8 @@ Terminal.create = function create( options )
 	terminal.remoteWin = remote.getCurrentWindow() ;
 	
 	terminal.palette = require( 'terminal-kit/lib/colorScheme/vga.json' ) ;
-	terminal.defaultFgColor = tree.extend( null , {} , terminal.palette[ 7 ] ) ;
-	terminal.defaultBgColor = tree.extend( null , {} , terminal.palette[ 0 ] ) ;
+	terminal.defaultFgColorIndex = 7 ;
+	terminal.defaultBgColorIndex = 0 ;
 	terminal.dimAlpha = 0.5 ;
 	//console.log( string.inspect( { style: 'color' } , terminal.palette ) ) ; process.exit() ;
 	terminal.paletteStyle() ;
@@ -118,7 +118,7 @@ Terminal.prototype.createLayout = function createLayout()
 		for ( x = 1 ; x <= this.width ; x ++ )
 		{
 			divElement = document.createElement( 'div' ) ;
-			divElement.setAttribute( 'class' , 'defaultFgColor defaultBgColor' ) ;
+			divElement.setAttribute( 'class' , 'fgColor' + this.defaultFgColorIndex + ' bgColor' + this.defaultBgColorIndex ) ;
 			tdElement = document.createElement( 'td' ) ;
 			tdElement.appendChild( divElement ) ;
 			trElement.appendChild( tdElement ) ;
@@ -161,17 +161,7 @@ Terminal.prototype.terminalStyle = function terminalStyle()
 
 Terminal.prototype.paletteStyle = function paletteStyle()
 {
-	var i , css = '' ;
-	
-	css += '#contentTable td div.defaultFgColor {\n' +
-		'\tcolor: rgb(' + this.defaultFgColor.r + ',' + this.defaultFgColor.g + ',' + this.defaultFgColor.b + ');\n' +
-		'}\n' +
-		'#contentTable td div.defaultBgColor {\n' +
-		'\tbackground-color: rgb(' + this.defaultBgColor.r + ',' + this.defaultBgColor.g + ',' + this.defaultBgColor.b + ');\n' +
-		'}\n' +
-		'#contentTable td div.defaultFgColor.dim {\n' +
-		'\tcolor: rgba(' + this.defaultFgColor.r + ',' + this.defaultFgColor.g + ',' + this.defaultFgColor.b + ',' + this.dimAlpha + ');\n' +
-		'}\n' ;
+	var self = this , i , css = '' ;
 	
 	var setRegister = function( c , rgb ) {
 		
@@ -181,8 +171,8 @@ Terminal.prototype.paletteStyle = function paletteStyle()
 			'#contentTable td div.bgColor' + c + ' {\n' +
 			'\tbackground-color: rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ');\n' +
 			'}\n' +
-			'#contentTable td div.fgColor.dim' + c + ' {\n' +
-			'\tcolor: rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + this.dimAlpha + ');\n' +
+			'#contentTable td div.dim.fgColor' + c + ' {\n' +
+			'\tcolor: rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + self.dimAlpha + ');\n' +
 			'}\n' ;
 	} ;
 	
@@ -216,19 +206,24 @@ function parseNumbers( sequence )
 
 Terminal.prototype.updateClassAttr = function updateClassAttr()
 {
-	var attr = [] ;
+	var fgColor , bgColor , attr = [] , tmp ;
+	
+	fgColor = this.cursor.fgColor === false ? this.defaultFgColorIndex : this.cursor.fgColor ;
+	bgColor = this.cursor.bgColor === false ? this.defaultBgColorIndex : this.cursor.bgColor ;
 	
 	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
 	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
 	if ( this.cursor.italic ) { attr.push( 'italic' ) ; }
 	if ( this.cursor.underline ) { attr.push( 'underline' ) ; }
 	if ( this.cursor.blink ) { attr.push( 'blink' ) ; }
-	if ( this.cursor.inverse ) { attr.push( 'inverse' ) ; }
-	if ( this.cursor.hidden ) { attr.push( 'hidden' ) ; }
 	if ( this.cursor.strike ) { attr.push( 'strike' ) ; }
 	
-	attr.push( this.cursor.fgColor === false ? 'defaultFgColor' : 'fgColor' + this.cursor.fgColor ) ;
-	attr.push( this.cursor.bgColor === false ? 'defaultBgColor' : 'bgColor' + this.cursor.bgColor ) ;
+	if ( this.cursor.inverse ) { tmp = bgColor ; bgColor = fgColor ; fgColor = tmp ; }
+	
+	if ( this.cursor.hidden ) { fgColor = bgColor ; }
+	
+	attr.push( 'fgColor' + fgColor ) ;
+	attr.push( 'bgColor' + bgColor ) ;
 	
 	this.cursor.classAttr = attr.join( ' ' ) ;
 } ;
@@ -279,7 +274,7 @@ Terminal.prototype.scrollDown = function scrollDown()
 	for ( x = 1 ; x <= this.width ; x ++ )
 	{
 		divElement = document.createElement( 'div' ) ;
-		divElement.setAttribute( 'class' , 'defaultFgColor defaultBgColor' ) ;
+		divElement.setAttribute( 'class' , 'fgColor' + this.defaultFgColorIndex + ' bgColor' + this.defaultBgColorIndex ) ;
 		tdElement = document.createElement( 'td' ) ;
 		tdElement.appendChild( divElement ) ;
 		trElement.appendChild( tdElement ) ;

@@ -28,11 +28,6 @@
 	font-weight: bold;
 }
 
-/*
-.dim {
-	opacity: 0.6;
-}*/
-
 .italic {
 	font-style: italic;
 }
@@ -41,22 +36,13 @@
 	text-decoration: underline;
 }
 
+.strike {
+	text-decoration: line-through;
+}
+
 .blink {
 	-webkit-animation: blink .75s linear infinite;
 	animation: blink .75s linear infinite;
-}
-
-.inverse {
-	-webkit-filter: invert(100%);
-	filter: invert(100%);
-}
-
-.hidden {
-	visibility: hidden;
-}
-
-.strike {
-	text-decoration: line-through;
 }
 
 
