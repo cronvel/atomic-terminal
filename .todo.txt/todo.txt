@@ -1,0 +1,1 @@
+(B) there is probably a bug in child_pty module, when the client send too many bytes, some data are missing... @bug

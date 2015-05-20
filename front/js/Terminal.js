@@ -160,6 +160,11 @@ Terminal.prototype.terminalStyle = function terminalStyle()
 
 
 
+/*
+	.paletteStyle( lowPalette , highPalette )
+		* lowPalette `boolean` if the low palette style should be rebuilt
+		* highPalette `boolean` if the high palette (256 colors) style should be rebuilt
+*/
 Terminal.prototype.paletteStyle = function paletteStyle( lowPalette , highPalette )
 {
 	var self = this , i , css ;
@@ -249,7 +254,7 @@ Terminal.prototype.printChar = function printChar( char )
 	element = this.domContentTable.rows[ this.cursor.y - 1 ].cells[ this.cursor.x - 1 ].firstChild ;
 	
 	element.textContent = char ;
-	console.log( 'attr: ' + this.cursor.classAttr ) ;
+	//console.log( 'attr: ' + this.cursor.classAttr ) ;
 	element.setAttribute( 'class' , this.cursor.classAttr ) ;
 	
 	
@@ -338,6 +343,13 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 		regexp , matches , bytes , found , handlerResult ,
 		index = 0 , length = chunk.length ;
 	
+	if ( this.onStdoutRemainder )
+	{
+		// If there is a remainder, just unshift it
+		chunk = Buffer.concat( [ this.onStdoutRemainder , chunk ] ) ;
+		console.log( 'Found a remainder, final chunk \n' + string.inspect( { style: 'color' } , chunk ) ) ;
+	}
+	
 	while ( index < length )
 	{
 		found = false ;
@@ -391,13 +403,15 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 		{
 			// Special case here: we should accumulate more of the buffer
 			
-			//		/!\ !!! THIS IS NOT IMPLEMENTED YET !!! /!\
-			
-			throw new Error( '[front/Terminal.js] bytes === null is not implemented yet, buffer: \n' + chunk.slice( index ) ) ;
+			this.onStdoutRemainder = chunk.slice( index ) ;
+			console.log( 'bytes === null, this.onStdoutRemainder: \n' + string.inspect( { style: 'color' } , this.onStdoutRemainder ) + this.onStdoutRemainder.toString() ) ;
+			return ;
 		}
 		
 		index += bytes ;
 	}
+	
+	this.onStdoutRemainder = null ;
 } ;
 
 
@@ -407,7 +421,6 @@ Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 	switch ( String.fromCharCode( chunk[ index ] ) )
 	{
 		case '[' :
-			console.log( 'CSI detected!!!' ) ;
 			if ( index + 1 < chunk.length ) { return this.csiSequence( chunk , index + 1 ) ; }
 	}
 	

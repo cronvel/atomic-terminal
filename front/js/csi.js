@@ -66,7 +66,7 @@ csi.m[ 0 ] = function styleReset()
 	this.cursor.inverse = false ;
 	this.cursor.hidden = false ;
 	this.cursor.strike = false ;
-	console.log( 'styleReset!!!' ) ;
+	//console.log( 'styleReset!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
@@ -196,11 +196,9 @@ csi.m[ 38 ] = function setHighFgColor()
 {
 	var trueColor = arguments[ 0 ] === 2 ;
 	
-	console.log( ">>>>>\n>>>>\n>>>> bobby: " + arguments[ 0 ] + "\n" ) ;
 	if ( ! trueColor )
 	{
 		// 256 colors
-		console.log( ">>>>>\n>>>>\n>>>> bobby: " + arguments[ 1 ] + "\n" ) ;
 		this.cursor.fgColor = arguments[ 1 ] ;
 		this.updateClassAttr() ;
 	}
