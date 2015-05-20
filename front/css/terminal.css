@@ -1,22 +1,22 @@
 
-#content {
+#contentDiv {
 	margin: 2px;
 }
 
-#content table {
+#contentTable {
 	table-layout: fixed;
 	border-collapse: collapse;
 	margin: 0;
 	padding: 0;
 }
 
-#content td {
+#contentTable td {
 	margin: 0px;
 	padding: 0px;
 	border: none;
 }
 
-#content td div {
+#contentTable td div {
 	margin: 0px;
 	padding: 0px;
 	border: none;

@@ -54,8 +54,12 @@ Terminal.create = function create( options )
 	terminal.width = options.width || 80 ;
 	terminal.height = options.height || 24 ;
 	
+	terminal.domContentDiv = document.getElementById( 'contentDiv' ) ;
+	terminal.domContentTable = document.getElementById( 'contentTable' ) ;
+	
 	terminal.domStyle = {
-		terminal: document.getElementById( 'terminal-style' )
+		terminal: document.getElementById( 'terminalStyle' ) ,
+		palette: document.getElementById( 'paletteStyle' )
 	} ;
 	
 	terminal.cell = {
@@ -71,6 +75,8 @@ Terminal.create = function create( options )
 	terminal.cursor = {
 		x: 1 ,
 		y: 1 ,
+		fgColor: 7 ,
+		bgColor: 0 ,
 		bold: false ,
 		dim: false ,
 		italic: false ,
@@ -84,8 +90,13 @@ Terminal.create = function create( options )
 	
 	terminal.remoteWin = remote.getCurrentWindow() ;
 	
-	terminal.domContent = document.getElementById( 'content' ) ;
+	terminal.palette = require( 'terminal-kit/lib/colorScheme/vga.json' ) ;
+	terminal.defaultFgColor = tree.extend( null , {} , terminal.palette[ 7 ] ) ;
+	terminal.defaultBgColor = tree.extend( null , {} , terminal.palette[ 0 ] ) ;
+	//console.log( string.inspect( { style: 'color' } , terminal.palette ) ) ; process.exit() ;
+	terminal.paletteStyle() ;
 	
+	terminal.updateClassAttr() ;
 	terminal.createLayout() ;
 	
 	return terminal ;
@@ -95,27 +106,25 @@ Terminal.create = function create( options )
 
 Terminal.prototype.createLayout = function createLayout()
 {
-	var x , y , html = '' ;
+	var x , y , trElement , tdElement , divElement ;
 	
 	this.terminalStyle() ;
 	
-	html += '<table>' ;
-	
 	for ( y = 1 ; y <= this.height ; y ++ )
 	{
-		html += '<tr>' ;
+		trElement = document.createElement( 'tr' ) ;
 		
 		for ( x = 1 ; x <= this.width ; x ++ )
 		{
-			html += '<td><div id="' + x + ',' + y + '"></div></td>' ;
+			divElement = document.createElement( 'div' ) ;
+			divElement.setAttribute( 'class' , 'defaultFgColor defaultBgColor' ) ;
+			tdElement = document.createElement( 'td' ) ;
+			tdElement.appendChild( divElement ) ;
+			trElement.appendChild( tdElement ) ;
 		}
 		
-		html += '</tr>' ;
+		this.domContentTable.appendChild( trElement ) ;
 	}
-	
-	html += '</table>' ;
-	
-	this.domContent.innerHTML = html ;
 } ;	
 
 
@@ -124,27 +133,55 @@ Terminal.prototype.terminalStyle = function terminalStyle()
 {
 	var css = '' ;
 	
-	css += '#content {\n' +
+	css += '#contentDiv {\n' +
 		'\tfont-family: ' + this.font.family + ', monospace;\n' +
 		'\tfont-size: ' + this.font.size + 'px;\n' +
 		'}\n' ;
 	
-	css += '#content table {\n' +
+	css += '#contentTable {\n' +
 		'\twidth: ' + this.width * this.cell.width + 'px;\n' +
 		'\theight: ' + this.height * this.cell.height + 'px;\n' +
 		'}\n' ;
 	
-	css += '#content td {\n' +
+	css += '#contentTable td {\n' +
 		'\twidth: ' + this.cell.width + 'px;\n' +
 		'\theight: ' + this.cell.height + 'px;\n' +
 		'}\n' ;
 	
-	css += '#content td div {\n' +
+	css += '#contentTable td div {\n' +
 		'\twidth: ' + this.cell.width + 'px;\n' +
 		'\theight: ' + this.cell.height + 'px;\n' +
 		'}\n' ;
 	
 	this.domStyle.terminal.innerHTML = css ;
+} ;	
+
+
+
+Terminal.prototype.paletteStyle = function paletteStyle()
+{
+	var i , css = '' ;
+	
+	css += '#contentTable td div.defaultFgColor {\n' +
+		'\tcolor: rgb(' + this.defaultFgColor.r + ',' + this.defaultFgColor.g + ',' + this.defaultFgColor.b + ');\n' +
+		'}\n' +
+		'#contentTable td div.defaultBgColor {\n' +
+		'\tbackground-color: rgb(' + this.defaultBgColor.r + ',' + this.defaultBgColor.g + ',' + this.defaultBgColor.b + ');\n' +
+		'}\n' ;
+	
+	var setRegister = function( c , rgb ) {
+		
+		css += '#contentTable td div.fgColor' + c + ' {\n' +
+			'\tcolor: rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ');\n' +
+			'}\n' +
+			'#contentTable td div.bgColor' + c + ' {\n' +
+			'\tbackground-color: rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ');\n' +
+			'}\n' ;
+	} ;
+	
+	for ( i = 0 ; i < this.palette.length ; i ++ ) { setRegister( i , this.palette[ i ] ) ; }
+	
+	this.domStyle.palette.innerHTML = css ;
 } ;	
 
 
@@ -161,33 +198,121 @@ Terminal.prototype.start = function start()
 
 
 
-Terminal.prototype.onStdout = function onStdout( chunk )
+/*
+function parseNumbers( sequence )
 {
-	var i , id ;
+	return sequence.split( ';' ).map( function( value ) { return parseInt( value , 10 ) ; } ) ;
+}
+*/
+
+
+
+Terminal.prototype.printChar = function printChar( char )
+{
+	var element ;
 	
-	chunk = chunk.toString( 'utf8' ) ;
+	// Get the div inside the table cell
+	element = this.domContentTable.rows[ this.cursor.y - 1 ].cells[ this.cursor.x - 1 ].firstChild ;
 	
-	for ( i = 0 ; i < data.length ; i ++ )
+	element.textContent = char ;
+	console.log( 'attr: ' + this.cursor.classAttr ) ;
+	element.setAttribute( 'class' , this.cursor.classAttr ) ;
+	
+	
+	this.cursor.x ++ ;
+	
+	if ( this.cursor.x > this.width )
 	{
-		id = this.cursor.x + ',' + this.cursor.y ;
-		document.getElementById( id ).textContent = data[ i ] ;
+		this.cursor.x = 1 ;
+		this.cursor.y ++ ;
 		
-		this.cursor.x ++ ;
-		
-		if ( this.cursor.x > this.width )
+		if ( this.cursor.y > this.height )
 		{
-			this.cursor.x = 1 ;
-			this.cursor.y ++ ;
-			
-			if ( this.cursor.y > this.height )
-			{
-				// I don't know what to do ATM
-			}
+			this.cursor.y = this.height ;
+			this.scrollDown() ;
 		}
-		
-		console.log( [ this.cursor.x , this.cursor.y ] ) ;
 	}
-} ;	
+	
+	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
+} ;
+
+
+
+Terminal.prototype.updateClassAttr = function updateClassAttr()
+{
+	var attr = [] ;
+	
+	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
+	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
+	if ( this.cursor.italic ) { attr.push( 'italic' ) ; }
+	if ( this.cursor.underline ) { attr.push( 'underline' ) ; }
+	if ( this.cursor.blink ) { attr.push( 'blink' ) ; }
+	if ( this.cursor.inverse ) { attr.push( 'inverse' ) ; }
+	if ( this.cursor.hidden ) { attr.push( 'hidden' ) ; }
+	if ( this.cursor.strike ) { attr.push( 'strike' ) ; }
+	
+	attr.push( 'fgColor' + this.cursor.fgColor ) ;
+	attr.push( 'bgColor' + this.cursor.bgColor ) ;
+	
+	this.cursor.classAttr = attr.join( ' ' ) ;
+} ;
+
+
+
+Terminal.prototype.scrollDown = function scrollDown()
+{
+	var x , trElement , tdElement ;
+	
+	// Delete the first row
+	this.domContentTable.deleteRow( 0 ) ;
+	
+	// Create a new row at the end of the table
+	trElement = this.domContentTable.insertRow() ;
+	
+	for ( x = 1 ; x <= this.width ; x ++ )
+	{
+		tdElement = document.createElement( 'td' ) ;
+		tdElement.appendChild( document.createElement( 'div' ) ) ;
+		trElement.appendChild( tdElement ) ;
+	}
+} ;
+
+
+
+Terminal.prototype.newLine = function newLine()
+{
+	this.cursor.x = 1 ;
+	this.cursor.y ++ ;
+	
+	if ( this.cursor.y > this.height )
+	{
+		this.cursor.y = this.height ;
+		this.scrollDown() ;
+	}
+	
+	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
+} ;
+
+
+
+Terminal.prototype.moveTo = function moveTo( x , y )
+{
+	if ( x !== undefined )
+	{
+		this.cursor.x = Math.max( 1 , Math.min( x , this.width ) ) ;	// bound to 1-width range
+	}
+	
+	if ( y !== undefined )
+	{
+		this.cursor.y = Math.max( 1 , Math.min( y , this.height ) ) ;	// bound to 1-height range
+	}
+} ;
+
+
+
+
+
+			/* STDOUT parsing */
 
 
 
@@ -299,91 +424,5 @@ Terminal.prototype.csiSequence = function csiSequence( chunk , index )
 	return null ;
 } ;
 
-
-
-/*
-function parseNumbers( sequence )
-{
-	return sequence.split( ';' ).map( function( value ) { return parseInt( value , 10 ) ; } ) ;
-}
-*/
-
-
-
-Terminal.prototype.printChar = function printChar( char )
-{
-	var id = this.cursor.x + ',' + this.cursor.y ;
-	var element = document.getElementById( id ) ;
-	
-	element.textContent = char ;
-	console.log( 'attr: ' + this.cursor.classAttr ) ;
-	element.setAttribute( 'class' , this.cursor.classAttr ) ;
-	
-	
-	this.cursor.x ++ ;
-	
-	if ( this.cursor.x > this.width )
-	{
-		this.cursor.x = 1 ;
-		this.cursor.y ++ ;
-		
-		if ( this.cursor.y > this.height )
-		{
-			// I don't know what to do ATM... we should scroll down, will do that later
-			this.cursor.y = this.height ;
-		}
-	}
-	
-	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
-} ;
-
-
-
-Terminal.prototype.updateClassAttr = function updateClassAttr()
-{
-	var attr = [] ;
-	
-	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
-	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
-	if ( this.cursor.italic ) { attr.push( 'italic' ) ; }
-	if ( this.cursor.underline ) { attr.push( 'underline' ) ; }
-	if ( this.cursor.blink ) { attr.push( 'blink' ) ; }
-	if ( this.cursor.inverse ) { attr.push( 'inverse' ) ; }
-	if ( this.cursor.hidden ) { attr.push( 'hidden' ) ; }
-	if ( this.cursor.strike ) { attr.push( 'strike' ) ; }
-	
-	this.cursor.classAttr = attr.join( ' ' ) ;
-} ;
-
-
-
-Terminal.prototype.newLine = function newLine()
-{
-	this.cursor.x = 1 ;
-	this.cursor.y ++ ;
-	
-	if ( this.cursor.y > this.height )
-	{
-		// I don't know what to do ATM... we should scroll down, will do that later
-		this.cursor.y = this.height ;
-	}
-	
-	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
-} ;
-
-
-
-Terminal.prototype.moveTo = function moveTo( x , y )
-{
-	if ( x !== undefined )
-	{
-		this.cursor.x = Math.max( 1 , Math.min( x , this.width ) ) ;	// bound to 1-width range
-	}
-	
-	if ( y !== undefined )
-	{
-		this.cursor.y = Math.max( 1 , Math.min( y , this.height ) ) ;	// bound to 1-height range
-	}
-} ;
 
 
