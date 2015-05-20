@@ -59,7 +59,8 @@ Terminal.create = function create( options )
 	
 	terminal.domStyle = {
 		terminal: document.getElementById( 'terminalStyle' ) ,
-		palette: document.getElementById( 'paletteStyle' )
+		palette: document.getElementById( 'paletteStyle' ) ,
+		palette256: document.getElementById( 'palette256Style' )
 	} ;
 	
 	terminal.cell = {
@@ -90,12 +91,12 @@ Terminal.create = function create( options )
 	
 	terminal.remoteWin = remote.getCurrentWindow() ;
 	
-	terminal.palette = require( 'terminal-kit/lib/colorScheme/vga.json' ) ;
+	terminal.palette = tree.extend( { deep: true } , [] , defaultPalette ) ;
 	terminal.defaultFgColorIndex = 7 ;
 	terminal.defaultBgColorIndex = 0 ;
 	terminal.dimAlpha = 0.5 ;
 	//console.log( string.inspect( { style: 'color' } , terminal.palette ) ) ; process.exit() ;
-	terminal.paletteStyle() ;
+	terminal.paletteStyle( true , true ) ;
 	
 	terminal.updateClassAttr() ;
 	terminal.createLayout() ;
@@ -159,9 +160,9 @@ Terminal.prototype.terminalStyle = function terminalStyle()
 
 
 
-Terminal.prototype.paletteStyle = function paletteStyle()
+Terminal.prototype.paletteStyle = function paletteStyle( lowPalette , highPalette )
 {
-	var self = this , i , css = '' ;
+	var self = this , i , css ;
 	
 	var setRegister = function( c , rgb ) {
 		
@@ -176,9 +177,19 @@ Terminal.prototype.paletteStyle = function paletteStyle()
 			'}\n' ;
 	} ;
 	
-	for ( i = 0 ; i < this.palette.length ; i ++ ) { setRegister( i , this.palette[ i ] ) ; }
+	if ( lowPalette )
+	{
+		css = '' ;
+		for ( i = 0 ; i <= 15 ; i ++ ) { setRegister( i , this.palette[ i ] ) ; }
+		this.domStyle.palette.innerHTML = css ;
+	}
 	
-	this.domStyle.palette.innerHTML = css ;
+	if ( highPalette )
+	{
+		css = '' ;
+		for ( i = 16 ; i <= 255 ; i ++ ) { setRegister( i , this.palette[ i ] ) ; }
+		this.domStyle.palette256.innerHTML = css ;
+	}
 } ;	
 
 
@@ -382,7 +393,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 			
 			//		/!\ !!! THIS IS NOT IMPLEMENTED YET !!! /!\
 			
-			throw new Error( '[front/Terminal.js] bytes === null is not implemented yet' ) ;
+			throw new Error( '[front/Terminal.js] bytes === null is not implemented yet, buffer: \n' + chunk.slice( index ) ) ;
 		}
 		
 		index += bytes ;
@@ -428,5 +439,48 @@ Terminal.prototype.csiSequence = function csiSequence( chunk , index )
 	return null ;
 } ;
 
+
+
+
+
+
+
+
+			/* Misc */
+
+
+
+// This is used for adjustement of floating point value, before applying Math.floor()
+var adjustFloor = 0.0000001 ;
+
+// Build the default palette
+var defaultPalette = require( 'terminal-kit/lib/colorScheme/vga.json' ) ;
+
+( function buildDefaultPalette()
+{
+	var register , offset , factor , l ;
+	
+	for ( register = 16 ; register < 232 ; register ++ )
+	{
+		// RGB 6x6x6
+		offset = register - 16 ;
+		factor = 255 / 5 ;
+		defaultPalette[ register ] = {
+			r: Math.floor( ( Math.floor( offset / 36 + adjustFloor ) % 6 ) * factor + adjustFloor ) ,
+			g: Math.floor( ( Math.floor( offset / 6 + adjustFloor ) % 6 ) * factor + adjustFloor ) ,
+			b: Math.floor( ( offset % 6 ) * factor + adjustFloor ) ,
+			names: []
+		} ;
+	}
+	
+	for ( register = 232 ; register <= 255 ; register ++ )
+	{
+		// Grayscale 0..23
+		offset = register - 231 ;	// not 232, because the first of them is not a #000000 black
+		factor = 255 / 25 ;	// not 23, because the last is not a #ffffff white
+		l = Math.floor( offset * factor + adjustFloor ) ;
+		defaultPalette[ register ] = { r: l , g: l , b: l , names: [] } ;
+	}
+} )() ;
 
 

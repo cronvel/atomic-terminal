@@ -40,10 +40,16 @@ function parseNumbers( sequence )
 
 
 
+
+
+			/* Styles and colors */
+
+
+
 csi.m = function characterAttributes( sequence )
 {
 	var params = parseNumbers( sequence ) ;
-	if ( csi.m[ params ] ) { csi.m[ params ].call( this , params.slice( 1 ) ) ; }
+	if ( csi.m[ params[ 0 ] ] ) { csi.m[ params[ 0 ] ].apply( this , params.slice( 1 ) ) ; }
 } ;
 
 
@@ -67,56 +73,48 @@ csi.m[ 0 ] = function styleReset()
 csi.m[ 1 ] = function bold()
 {
 	this.cursor.bold = true ;
-	console.log( 'bold!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 2 ] = function dim()
 {
 	this.cursor.dim = true ;
-	console.log( 'dim!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 3 ] = function italic()
 {
 	this.cursor.italic = true ;
-	console.log( 'italic!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 4 ] = function underline()
 {
 	this.cursor.underline = true ;
-	console.log( 'underline!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 5 ] = function blink()
 {
 	this.cursor.blink = true ;
-	console.log( 'blink!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 7 ] = function inverse()
 {
 	this.cursor.inverse = true ;
-	console.log( 'inverse!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 8 ] = function hidden()
 {
 	this.cursor.hidden = true ;
-	console.log( 'hidden!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 9 ] = function strike()
 {
 	this.cursor.strike = true ;
-	console.log( 'strike!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
@@ -124,49 +122,42 @@ csi.m[ 22 ] = function noBoldNoDim()
 {
 	this.cursor.bold = false ;
 	this.cursor.dim = false ;
-	console.log( 'nobold, nodim!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 23 ] = function noItalic()
 {
 	this.cursor.italic = false ;
-	console.log( 'noitalic!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 24 ] = function noUnderline()
 {
 	this.cursor.underline = false ;
-	console.log( 'nounderline!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 25 ] = function noBlink()
 {
 	this.cursor.blink = false ;
-	console.log( 'noblink!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 27 ] = function noInverse()
 {
 	this.cursor.inverse = false ;
-	console.log( 'noinverse!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 28 ] = function noHidden()
 {
 	this.cursor.hidden = false ;
-	console.log( 'nohidden!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
 csi.m[ 29 ] = function noStrike()
 {
 	this.cursor.strike = false ;
-	console.log( 'nostrike!!!' ) ;
 	this.updateClassAttr() ;
 } ;
 
@@ -174,12 +165,18 @@ csi.m[ 29 ] = function noStrike()
 
 function createSetFgColor( c )
 { 
-	return function setFgColor() { this.cursor.fgColor = c ; this.updateClassAttr() ; } ;
+	return function setFgColor() {
+		this.cursor.fgColor = c ;
+		this.updateClassAttr() ;
+	} ;
 } ;
 
 function createSetBgColor( c )
 { 
-	return function setBgColor() { this.cursor.bgColor = c ; this.updateClassAttr() ; } ;
+	return function setBgColor() {
+		this.cursor.bgColor = c ;
+		this.updateClassAttr() ;
+	} ;
 } ;
 
 for ( i = 0 ; i < 8 ; i ++ )
@@ -193,7 +190,35 @@ for ( i = 0 ; i < 8 ; i ++ )
 csi.m[ 39 ] = createSetFgColor( false ) ;
 csi.m[ 49 ] = createSetBgColor( false ) ;
 
-// TODO: default Fg and Bg colors
-// TODO: 256 colors...
+
+
+csi.m[ 38 ] = function setHighFgColor()
+{
+	var trueColor = arguments[ 0 ] === 2 ;
+	
+	console.log( ">>>>>\n>>>>\n>>>> bobby: " + arguments[ 0 ] + "\n" ) ;
+	if ( ! trueColor )
+	{
+		// 256 colors
+		console.log( ">>>>>\n>>>>\n>>>> bobby: " + arguments[ 1 ] + "\n" ) ;
+		this.cursor.fgColor = arguments[ 1 ] ;
+		this.updateClassAttr() ;
+	}
+} ;
+
+
+
+csi.m[ 48 ] = function setHighBgColor()
+{
+	var trueColor = arguments[ 0 ] === 2 ;
+	
+	if ( ! trueColor )
+	{
+		// 256 colors
+		this.cursor.bgColor = arguments[ 1 ] ;
+		this.updateClassAttr() ;
+	}
+} ;
+
 
 
