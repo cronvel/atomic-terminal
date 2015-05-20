@@ -75,8 +75,8 @@ Terminal.create = function create( options )
 	terminal.cursor = {
 		x: 1 ,
 		y: 1 ,
-		fgColor: 7 ,
-		bgColor: 0 ,
+		fgColor: false ,
+		bgColor: false ,
 		bold: false ,
 		dim: false ,
 		italic: false ,
@@ -207,6 +207,27 @@ function parseNumbers( sequence )
 
 
 
+Terminal.prototype.updateClassAttr = function updateClassAttr()
+{
+	var attr = [] ;
+	
+	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
+	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
+	if ( this.cursor.italic ) { attr.push( 'italic' ) ; }
+	if ( this.cursor.underline ) { attr.push( 'underline' ) ; }
+	if ( this.cursor.blink ) { attr.push( 'blink' ) ; }
+	if ( this.cursor.inverse ) { attr.push( 'inverse' ) ; }
+	if ( this.cursor.hidden ) { attr.push( 'hidden' ) ; }
+	if ( this.cursor.strike ) { attr.push( 'strike' ) ; }
+	
+	attr.push( this.cursor.fgColor === false ? 'defaultFgColor' : 'fgColor' + this.cursor.fgColor ) ;
+	attr.push( this.cursor.bgColor === false ? 'defaultBgColor' : 'bgColor' + this.cursor.bgColor ) ;
+	
+	this.cursor.classAttr = attr.join( ' ' ) ;
+} ;
+
+
+
 Terminal.prototype.printChar = function printChar( char )
 {
 	var element ;
@@ -234,27 +255,6 @@ Terminal.prototype.printChar = function printChar( char )
 	}
 	
 	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
-} ;
-
-
-
-Terminal.prototype.updateClassAttr = function updateClassAttr()
-{
-	var attr = [] ;
-	
-	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
-	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
-	if ( this.cursor.italic ) { attr.push( 'italic' ) ; }
-	if ( this.cursor.underline ) { attr.push( 'underline' ) ; }
-	if ( this.cursor.blink ) { attr.push( 'blink' ) ; }
-	if ( this.cursor.inverse ) { attr.push( 'inverse' ) ; }
-	if ( this.cursor.hidden ) { attr.push( 'hidden' ) ; }
-	if ( this.cursor.strike ) { attr.push( 'strike' ) ; }
-	
-	attr.push( 'fgColor' + this.cursor.fgColor ) ;
-	attr.push( 'bgColor' + this.cursor.bgColor ) ;
-	
-	this.cursor.classAttr = attr.join( ' ' ) ;
 } ;
 
 

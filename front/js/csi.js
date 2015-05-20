@@ -50,6 +50,8 @@ csi.m = function characterAttributes( sequence )
 
 csi.m[ 0 ] = function styleReset()
 {
+	this.cursor.fgColor = false ;
+	this.cursor.bgColor = false ;
 	this.cursor.bold = false ;
 	this.cursor.dim = false ;
 	this.cursor.italic = false ;
@@ -172,12 +174,12 @@ csi.m[ 29 ] = function noStrike()
 
 function createSetFgColor( c )
 { 
-	return function setFgColor() { this.cursor.fgColor = c ; } ;
+	return function setFgColor() { this.cursor.fgColor = c ; this.updateClassAttr() ; } ;
 } ;
 
 function createSetBgColor( c )
 { 
-	return function setBgColor() { this.cursor.bgColor = c ; } ;
+	return function setBgColor() { this.cursor.bgColor = c ; this.updateClassAttr() ; } ;
 } ;
 
 for ( i = 0 ; i < 8 ; i ++ )
@@ -187,6 +189,9 @@ for ( i = 0 ; i < 8 ; i ++ )
 	csi.m[ 40 + i ] = createSetBgColor( i ) ;
 	csi.m[ 100 + i ] = createSetBgColor( i + 8 ) ;
 }
+
+csi.m[ 39 ] = createSetFgColor( false ) ;
+csi.m[ 49 ] = createSetBgColor( false ) ;
 
 // TODO: default Fg and Bg colors
 // TODO: 256 colors...

@@ -52,7 +52,7 @@ term.magenta( 'magenta ' ).brightMagenta( 'brightMagenta' )( '\n' ) ;
 for ( i = 0 ; i < 16 ; i ++ ) { term.color( i , '*' ) ; }
 term( '\n' ) ;
 
-process.exit() ;
+
 
 // Test background colors
 
@@ -71,6 +71,7 @@ term.bgMagenta( 'bgMagenta ' ).bgBrightMagenta( 'bgBrightMagenta' )( '\n' ) ;
 for ( i = 0 ; i < 16 ; i ++ ) { term.bgColor( i , ' ' ) ; }
 term( '\n' ) ;
 
+process.exit() ;
 
 
 // Test styles
