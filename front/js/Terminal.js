@@ -63,13 +63,13 @@ Terminal.create = function create( options )
 	} ;
 	
 	terminal.cell = {
-		width: 8 ,
-		height: 16
+		width: 10 ,
+		height: 19
 	} ;
 	
 	terminal.font = {
 		family: 'monospace' ,
-		size: 16
+		size: 18
 	}
 	
 	terminal.cursor = {
@@ -93,6 +93,7 @@ Terminal.create = function create( options )
 	terminal.palette = require( 'terminal-kit/lib/colorScheme/vga.json' ) ;
 	terminal.defaultFgColor = tree.extend( null , {} , terminal.palette[ 7 ] ) ;
 	terminal.defaultBgColor = tree.extend( null , {} , terminal.palette[ 0 ] ) ;
+	terminal.dimAlpha = 0.5 ;
 	//console.log( string.inspect( { style: 'color' } , terminal.palette ) ) ; process.exit() ;
 	terminal.paletteStyle() ;
 	
@@ -167,6 +168,9 @@ Terminal.prototype.paletteStyle = function paletteStyle()
 		'}\n' +
 		'#contentTable td div.defaultBgColor {\n' +
 		'\tbackground-color: rgb(' + this.defaultBgColor.r + ',' + this.defaultBgColor.g + ',' + this.defaultBgColor.b + ');\n' +
+		'}\n' +
+		'#contentTable td div.defaultFgColor.dim {\n' +
+		'\tcolor: rgba(' + this.defaultFgColor.r + ',' + this.defaultFgColor.g + ',' + this.defaultFgColor.b + ',' + this.dimAlpha + ');\n' +
 		'}\n' ;
 	
 	var setRegister = function( c , rgb ) {
@@ -176,6 +180,9 @@ Terminal.prototype.paletteStyle = function paletteStyle()
 			'}\n' +
 			'#contentTable td div.bgColor' + c + ' {\n' +
 			'\tbackground-color: rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ');\n' +
+			'}\n' +
+			'#contentTable td div.fgColor.dim' + c + ' {\n' +
+			'\tcolor: rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + this.dimAlpha + ');\n' +
 			'}\n' ;
 	} ;
 	
@@ -261,7 +268,7 @@ Terminal.prototype.printChar = function printChar( char )
 
 Terminal.prototype.scrollDown = function scrollDown()
 {
-	var x , trElement , tdElement ;
+	var x , trElement , tdElement , divElement ;
 	
 	// Delete the first row
 	this.domContentTable.deleteRow( 0 ) ;
@@ -271,8 +278,10 @@ Terminal.prototype.scrollDown = function scrollDown()
 	
 	for ( x = 1 ; x <= this.width ; x ++ )
 	{
+		divElement = document.createElement( 'div' ) ;
+		divElement.setAttribute( 'class' , 'defaultFgColor defaultBgColor' ) ;
 		tdElement = document.createElement( 'td' ) ;
-		tdElement.appendChild( document.createElement( 'div' ) ) ;
+		tdElement.appendChild( divElement ) ;
 		trElement.appendChild( tdElement ) ;
 	}
 } ;

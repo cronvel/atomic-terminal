@@ -71,7 +71,7 @@ term.bgMagenta( 'bgMagenta ' ).bgBrightMagenta( 'bgBrightMagenta' )( '\n' ) ;
 for ( i = 0 ; i < 16 ; i ++ ) { term.bgColor( i , ' ' ) ; }
 term( '\n' ) ;
 
-process.exit() ;
+//process.exit() ;
 
 
 // Test styles
