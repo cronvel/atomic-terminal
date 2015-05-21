@@ -29,6 +29,9 @@
     "type": "git",
     "url": "https://github.com/cronvel/atomic-terminal.git"
   },
+  "bin": {
+    "atomic-terminal": "./bin/atomic-terminal"
+  },
   "keywords": [
     "terminal",
     "electron"
