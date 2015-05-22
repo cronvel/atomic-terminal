@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
 	Copyright (c) 2015 Cédric Ronvel 
 	
@@ -32,16 +34,17 @@ var spawn = require( 'child_pty' ).spawn ;
 
 // Create the object & export it
 var processCom = {} ;
-module.exports = processCom ;
 
 
 
 processCom.exec = function exec( command , args )
 {
-	var interface = spawn( command , args , { columns: 80 , rows: 24 } ) ;
+	if ( ! args ) { args = [] ; }
 	
 	console.log( command ) ;
 	console.log( args ) ;
+	
+	var interface = spawn( command , args , { columns: 80 , rows: 24 } ) ;
 	
 	/*
 	interface.stdout.on( 'data' , function( data ) {
@@ -60,5 +63,16 @@ processCom.exec = function exec( command , args )
 	return interface ;
 } ;
 
+
+
+var child = processCom.exec( process.argv[ 2 ] ) ;
+
+child.stdout.on( 'data' , function( data ) {
+	process.stdout.write( data ) ;
+} ) ;
+
+child.on( 'close' , function( data ) {
+	process.exit() ;
+} ) ;
 
 

@@ -13,7 +13,7 @@ var BrowserWindow = require( 'browser-window' ) ;
 var crashReporter = require( 'crash-reporter' ) ;
 
 // Processus communication
-var processCom = require( './processCom.js' ) ;
+var ChildProcess = require( './ChildProcess.js' ) ;
 
 
 
@@ -51,9 +51,8 @@ app.on( 'ready' , function() {
 	// Open dev tools?
 	if ( process.argv.indexOf( '--dev' ) !== -1 ) { mainWindow.openDevTools() ; }
 	
-	//console.log( process.argv ) ;
-	mainWindow.command = { program: process.argv[ 2 ] , args: process.argv.slice( 3 ) } ;
-	//mainWindow.processCom = processCom.exec( process.argv[ 2 ] , process.argv.slice( 3 ) ) ;
+	mainWindow.command = { path: process.argv[ 2 ] , args: process.argv.slice( 3 ) } ;
+	mainWindow.childProcess = ChildProcess.create( process.argv[ 2 ] , process.argv.slice( 3 ) ) ;
 	
 	// and load the index.html of the app.
 	mainWindow.loadUrl( 'file://' + __dirname + '/front/terminal.html' ) ;

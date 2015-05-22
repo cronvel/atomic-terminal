@@ -31,8 +31,6 @@ var string = require( 'string-kit' ) ;
 var tree = require( 'tree-kit' ) ;
 var dom = require( 'dom-kit' ) ;
 
-var processCom = require( '../../processCom.js' ) ;
-
 
 
 function Terminal() { throw new Error( "[Front/Terminal] use Terminal.create() instead..." ) ; }
@@ -203,10 +201,21 @@ Terminal.prototype.start = function start()
 {
 	var self = this , spawned ;
 	
-	spawned = processCom.exec( this.remoteWin.command.program , this.remoteWin.command.args ) ;
-	spawned.stdout.on( 'data' , Terminal.prototype.onStdout.bind( this ) ) ;
+	//*
+	this.remoteWin.childProcess.run() ;
+	this.remoteWin.childProcess.on( 'output' , Terminal.prototype.onStdout.bind( this ) ) ;
+	//*/
 	
-	//this.remoteWin.processCom.stdout.on( 'data' , Terminal.prototype.onStdout.bind( this ) ) ;
+	/*
+	spawned = this.remoteWin.childProcess.run() ;
+	spawned.stdout.on( 'data' , Terminal.prototype.onStdout.bind( this ) ) ;
+	//*/
+	
+	/*
+	var childProcess = require( '../../ChildProcess.js' ).create( this.remoteWin.command.path , this.remoteWin.command.args ) ;
+	spawned = childProcess.run() ;
+	spawned.stdout.on( 'data' , Terminal.prototype.onStdout.bind( this ) ) ;
+	//*/
 } ;	
 
 
@@ -342,6 +351,12 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 		keymapCode , keymapStartCode , keymap , keymapList ,
 		regexp , matches , bytes , found , handlerResult ,
 		index = 0 , length = chunk.length ;
+	
+	//if ( ! Buffer.isBuffer( chunk ) ) { throw new Error( 'not a buffer' ) ; }
+	//console.log( 'Chunk: \n' + string.inspect( { style: 'color' } , chunk ) ) ;
+	
+	// Tmp?
+	if ( typeof chunk === 'string' ) { chunk = new Buffer( chunk , 'ascii' ) ; }
 	
 	if ( this.onStdoutRemainder )
 	{
