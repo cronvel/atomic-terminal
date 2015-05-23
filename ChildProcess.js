@@ -97,8 +97,16 @@ ChildProcess.prototype.run = function run()
 	this.child.on( 'close', function( code ) {
 		self.emit( 'close' , code ) ;
 	} ) ;
-	
-	return this.child ;
+} ;
+
+
+
+ChildProcess.prototype.input = function input( string )
+{
+	// Something is wrong, the child do not receive any data ATM :'(
+	console.log( "bob" ) ;
+	//this.child.stdin.write( string ) ;
+	this.child.stdin.write( 'a\n' ) ;
 } ;
 
 

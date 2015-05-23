@@ -24,20 +24,53 @@
 
 
 
-// It appears that the current directory path is the HTML's directory...
-// It's only true for files loaded directly via a <script> tag in the HTML... 
-// That's a supa feature...
-var Terminal = require( './js/Terminal.js' ) ;
-var dom = require( 'dom-kit' ) ;
+var keyboard = {} ;
+module.exports = keyboard ;
 
 
 
-var terminal ;
-
-
-
-dom.ready( function() {
+keyboard.onKeyDown = function onKeyDown( event )
+{
+	var keyCode = event.keyCode ;
+	var keyChar = String.fromCharCode( keyCode ) ;
 	
-	terminal = Terminal.create() ;
-	terminal.start() ;
-} ) ;
+	switch( keyCode )
+	{
+		case 16:
+		case 17:
+		case 18:
+			// shift, ctrl, alt: do nothing
+		case 225:
+			keyboard.altgr = true ;
+			break ;
+		
+		default :
+			console.log( "Key pressed " +
+				( event.shiftKey ? 'Shift+' : '' ) +
+				( event.ctrlKey ? 'Ctrl+' : '' ) +
+				( event.altKey ? 'Alt+' : '' ) +
+				( event.metaKey ? 'Meta+' : '' ) +
+				keyChar +
+				' [' + keyCode + ']'
+			) ;
+			this.remoteWin.childProcess.input( keyChar ) ;
+			break ;
+	}
+} ;
+
+
+
+keyboard.onKeyUp = function onKeyUp( event )
+{
+	var key = event.keyCode || event.which ;
+	var keychar = String.fromCharCode( key ) ;
+	
+	switch( key )
+	{
+		case 225:
+			keyboard.altgr = false ;
+			break ;
+	}
+} ;
+
+

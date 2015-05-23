@@ -1,6 +1,8 @@
 
 #contentDiv {
 	margin: 2px;
+	border: none;
+	outline: none;
 }
 
 #contentTable {

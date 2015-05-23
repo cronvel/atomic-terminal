@@ -40,6 +40,7 @@ module.exports = Terminal ;
 
 // Submodule parts
 Terminal.csi = require( './csi.js' ) ;
+Terminal.keyboard = require( './keyboard.js' ) ;
 
 
 
@@ -200,23 +201,16 @@ Terminal.prototype.paletteStyle = function paletteStyle( lowPalette , highPalett
 
 Terminal.prototype.start = function start()
 {
-	var self = this , spawned ;
+	var self = this ;
 	
-	//*
+	// The terminal is ready: run the underlying process!
 	this.remoteWin.childProcess.run() ;
 	this.remoteWin.childProcess.on( 'output' , Terminal.prototype.onStdout.bind( this ) ) ;
-	//*/
 	
-	/*
-	spawned = this.remoteWin.childProcess.run() ;
-	spawned.stdout.on( 'data' , Terminal.prototype.onStdout.bind( this ) ) ;
-	//*/
-	
-	/*
-	var childProcess = require( '../../ChildProcess.js' ).create( this.remoteWin.command.path , this.remoteWin.command.args ) ;
-	spawned = childProcess.run() ;
-	spawned.stdout.on( 'data' , Terminal.prototype.onStdout.bind( this ) ) ;
-	//*/
+	// Give focus to the content div and register keyDown events
+	this.domContentDiv.focus() ;
+	this.domContentDiv.onkeydown = Terminal.keyboard.onKeyDown.bind( this ) ;
+	this.domContentDiv.onkeyup = Terminal.keyboard.onKeyUp.bind( this ) ;
 } ;	
 
 
