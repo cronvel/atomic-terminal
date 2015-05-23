@@ -345,6 +345,10 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 
 
 
+Terminal.prototype.move = function move( x , y ) { this.moveTo( this.cursor.x + x , this.cursor.y + y ) ; }
+
+
+
 
 
 			/* STDOUT parsing */

@@ -42,6 +42,31 @@ function parseNumbers( sequence )
 
 
 
+			/* Cursor */
+
+
+
+csi.A = function up( sequence ) { this.move( undefined , - parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.B = function down( sequence ) { this.move( undefined , parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.C = function right( sequence ) { this.move( parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.D = function left( sequence ) { this.move( - parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.E = function nextLine( sequence ) { this.moveTo( 1 , this.cursor.y + parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.F = function previousLine( sequence ) { this.moveTo( 1 , this.cursor.y - parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.G = function column( sequence ) { this.moveTo( parseNumbers( sequence )[ 0 ] ) ; } ;
+
+csi.G = function moveTo( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.moveTo( params[ 1 ] , params[ 0 ] ) ;
+} ;
+
+
+
+
+
+
+
+
 			/* Styles and colors */
 
 
