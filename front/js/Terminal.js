@@ -356,13 +356,13 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 	//console.log( 'Chunk: \n' + string.inspect( { style: 'color' } , chunk ) ) ;
 	
 	// Tmp?
-	if ( typeof chunk === 'string' ) { chunk = new Buffer( chunk , 'ascii' ) ; }
+	if ( typeof chunk === 'string' ) { chunk = new Buffer( chunk , 'binary' ) ; }
 	
 	if ( this.onStdoutRemainder )
 	{
 		// If there is a remainder, just unshift it
 		chunk = Buffer.concat( [ this.onStdoutRemainder , chunk ] ) ;
-		console.log( 'Found a remainder, final chunk \n' + string.inspect( { style: 'color' } , chunk ) ) ;
+		//console.log( 'Found a remainder, final chunk \n' + string.inspect( { style: 'color' } , chunk ) ) ;
 	}
 	
 	while ( index < length )
@@ -419,7 +419,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 			// Special case here: we should accumulate more of the buffer
 			
 			this.onStdoutRemainder = chunk.slice( index ) ;
-			console.log( 'bytes === null, this.onStdoutRemainder: \n' + string.inspect( { style: 'color' } , this.onStdoutRemainder ) + this.onStdoutRemainder.toString() ) ;
+			//console.log( 'bytes === null, this.onStdoutRemainder: \n' + string.inspect( { style: 'color' } , this.onStdoutRemainder ) + this.onStdoutRemainder.toString() ) ;
 			return ;
 		}
 		
@@ -482,7 +482,9 @@ Terminal.prototype.csiSequence = function csiSequence( chunk , index )
 var adjustFloor = 0.0000001 ;
 
 // Build the default palette
-var defaultPalette = require( 'terminal-kit/lib/colorScheme/vga.json' ) ;
+
+// This make atomic-terminal and terminal-kit use the same colorScheme
+var defaultPalette = require( 'terminal-kit/lib/colorScheme/atomic-terminal.json' ) ;
 
 ( function buildDefaultPalette()
 {

@@ -82,7 +82,7 @@ ChildProcess.prototype.run = function run()
 		// Remote Buffer does not contains data, only accessors (via IPC) and that sucks big time.
 		
 		//self.emit( 'output' , data ) ;
-		self.emit( 'output' , data.toString( 'ascii' ) ) ;
+		self.emit( 'output' , data.toString( 'binary' ) ) ;
 	} ) ;
 	
 	/*

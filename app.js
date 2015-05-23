@@ -15,6 +15,9 @@ var crashReporter = require( 'crash-reporter' ) ;
 // Processus communication
 var ChildProcess = require( './ChildProcess.js' ) ;
 
+// Safely set the process' title from the package name
+process.title = require( './package.json' ).name ;
+
 
 
 // Start the crash reporter
