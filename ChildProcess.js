@@ -28,6 +28,8 @@
 //var spawn = require( 'child_process' ).spawn ;
 var spawn = require( 'child_pty' ).spawn ;
 var events = require( 'events' ) ;
+var tree = require( 'tree-kit' ) ;
+
 
 
 /*
@@ -35,6 +37,7 @@ var events = require( 'events' ) ;
 	Data can be lost.
 	So it should be run in the browser process.
 */
+
 
 
 function ChildProcess() { throw new Error( '[ChildProcess] use ChildProcess.create() instead' ) ; }
@@ -61,7 +64,14 @@ ChildProcess.prototype.run = function run()
 {
 	var self = this ;
 	
-	this.child = spawn( this.command , this.args , { columns: 80 , rows: 24 } ) ;
+	this.child = spawn( this.command , this.args , {
+		env: tree.extend( null , {} , process.env , {
+			TERM: 'xterm-256color' ,
+			COLORTERM: 'atomic-terminal'
+		} ) ,
+		columns: 80 ,
+		rows: 24
+	} ) ;
 	
 	this.child.stdout.on( 'data' , function( data ) {
 		
