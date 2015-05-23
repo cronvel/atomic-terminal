@@ -67,98 +67,98 @@ csi.m[ 0 ] = function styleReset()
 	this.cursor.hidden = false ;
 	this.cursor.strike = false ;
 	//console.log( 'styleReset!!!' ) ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 1 ] = function bold()
 {
 	this.cursor.bold = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 2 ] = function dim()
 {
 	this.cursor.dim = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 3 ] = function italic()
 {
 	this.cursor.italic = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 4 ] = function underline()
 {
 	this.cursor.underline = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 5 ] = function blink()
 {
 	this.cursor.blink = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 7 ] = function inverse()
 {
 	this.cursor.inverse = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 8 ] = function hidden()
 {
 	this.cursor.hidden = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 9 ] = function strike()
 {
 	this.cursor.strike = true ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 22 ] = function noBoldNoDim()
 {
 	this.cursor.bold = false ;
 	this.cursor.dim = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 23 ] = function noItalic()
 {
 	this.cursor.italic = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 24 ] = function noUnderline()
 {
 	this.cursor.underline = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 25 ] = function noBlink()
 {
 	this.cursor.blink = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 27 ] = function noInverse()
 {
 	this.cursor.inverse = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 28 ] = function noHidden()
 {
 	this.cursor.hidden = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 csi.m[ 29 ] = function noStrike()
 {
 	this.cursor.strike = false ;
-	this.updateClassAttr() ;
+	this.updateAttrs() ;
 } ;
 
 
@@ -167,7 +167,7 @@ function createSetFgColor( c )
 { 
 	return function setFgColor() {
 		this.cursor.fgColor = c ;
-		this.updateClassAttr() ;
+		this.updateAttrs() ;
 	} ;
 } ;
 
@@ -175,7 +175,7 @@ function createSetBgColor( c )
 { 
 	return function setBgColor() {
 		this.cursor.bgColor = c ;
-		this.updateClassAttr() ;
+		this.updateAttrs() ;
 	} ;
 } ;
 
@@ -196,11 +196,17 @@ csi.m[ 38 ] = function setHighFgColor()
 {
 	var trueColor = arguments[ 0 ] === 2 ;
 	
-	if ( ! trueColor )
+	if ( trueColor )
+	{
+		// 24 bits True Colors
+		this.cursor.fgColor = [ arguments[ 1 ] , arguments[ 2 ] , arguments[ 3 ] ] ;
+		this.updateAttrs() ;
+	}
+	else
 	{
 		// 256 colors
 		this.cursor.fgColor = arguments[ 1 ] ;
-		this.updateClassAttr() ;
+		this.updateAttrs() ;
 	}
 } ;
 
@@ -210,11 +216,17 @@ csi.m[ 48 ] = function setHighBgColor()
 {
 	var trueColor = arguments[ 0 ] === 2 ;
 	
-	if ( ! trueColor )
+	if ( trueColor )
+	{
+		// 24 bits True Colors
+		this.cursor.bgColor = [ arguments[ 1 ] , arguments[ 2 ] , arguments[ 3 ] ] ;
+		this.updateAttrs() ;
+	}
+	else
 	{
 		// 256 colors
 		this.cursor.bgColor = arguments[ 1 ] ;
-		this.updateClassAttr() ;
+		this.updateAttrs() ;
 	}
 } ;
 

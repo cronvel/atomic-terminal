@@ -82,6 +82,8 @@ ChildProcess.prototype.run = function run()
 		// Remote Buffer does not contains data, only accessors (via IPC) and that sucks big time.
 		
 		//self.emit( 'output' , data ) ;
+		
+		// I know that converting to binary string is deprecated, but I don't really have the choice here
 		self.emit( 'output' , data.toString( 'binary' ) ) ;
 	} ) ;
 	

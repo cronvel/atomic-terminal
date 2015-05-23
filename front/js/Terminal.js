@@ -84,7 +84,8 @@ Terminal.create = function create( options )
 		inverse: false ,
 		hidden: false ,
 		strike: false ,
-		classAttr: ''
+		classAttr: null ,
+		styleAttr: null
 	} ;
 	
 	terminal.remoteWin = remote.getCurrentWindow() ;
@@ -96,7 +97,7 @@ Terminal.create = function create( options )
 	//console.log( string.inspect( { style: 'color' } , terminal.palette ) ) ; process.exit() ;
 	terminal.paletteStyle( true , true ) ;
 	
-	terminal.updateClassAttr() ;
+	terminal.updateAttrs() ;
 	terminal.createLayout() ;
 	
 	return terminal ;
@@ -229,9 +230,9 @@ function parseNumbers( sequence )
 
 
 
-Terminal.prototype.updateClassAttr = function updateClassAttr()
+Terminal.prototype.updateAttrs = function updateAttrs()
 {
-	var fgColor , bgColor , attr = [] , tmp ;
+	var fgColor , bgColor , attr = [] , style = [] , tmp ;
 	
 	fgColor = this.cursor.fgColor === false ? this.defaultFgColorIndex : this.cursor.fgColor ;
 	bgColor = this.cursor.bgColor === false ? this.defaultBgColorIndex : this.cursor.bgColor ;
@@ -247,10 +248,14 @@ Terminal.prototype.updateClassAttr = function updateClassAttr()
 	
 	if ( this.cursor.hidden ) { fgColor = bgColor ; }
 	
-	attr.push( 'fgColor' + fgColor ) ;
-	attr.push( 'bgColor' + bgColor ) ;
+	if ( Array.isArray( fgColor ) ) { style.push( 'color: rgb(' + fgColor.join( ',' ) + ');' ) ; }
+	else { attr.push( 'fgColor' + fgColor ) ; }
 	
-	this.cursor.classAttr = attr.join( ' ' ) ;
+	if ( Array.isArray( bgColor ) ) { style.push( 'background-color: rgb(' + bgColor.join( ',' ) + ');' ) ; }
+	else { attr.push( 'bgColor' + bgColor ) ; }
+	
+	this.cursor.classAttr = attr.join( ' ' ) || null ;
+	this.cursor.styleAttr = style.join( ' ' ) || null ;
 } ;
 
 
@@ -265,6 +270,7 @@ Terminal.prototype.printChar = function printChar( char )
 	element.textContent = char ;
 	//console.log( 'attr: ' + this.cursor.classAttr ) ;
 	element.setAttribute( 'class' , this.cursor.classAttr ) ;
+	element.setAttribute( 'style' , this.cursor.styleAttr ) ;
 	
 	
 	this.cursor.x ++ ;
@@ -355,7 +361,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 	//if ( ! Buffer.isBuffer( chunk ) ) { throw new Error( 'not a buffer' ) ; }
 	//console.log( 'Chunk: \n' + string.inspect( { style: 'color' } , chunk ) ) ;
 	
-	// Tmp?
+	// I know that converting from binary string is deprecated, but I don't really have the choice here
 	if ( typeof chunk === 'string' ) { chunk = new Buffer( chunk , 'binary' ) ; }
 	
 	if ( this.onStdoutRemainder )
