@@ -24,13 +24,21 @@
 
 
 
+// Load modules
+var string = require( 'string-kit' ) ;
+
+
+
 var keyboard = {} ;
 module.exports = keyboard ;
 
 
 
+// Should I use keypressed event instead?
+
 keyboard.onKeyDown = function onKeyDown( event )
 {
+	console.log( string.inspect( { style: 'color' , depth: 1 } , event ) ) ;
 	var keyCode = event.keyCode ;
 	var keyChar = String.fromCharCode( keyCode ) ;
 	
@@ -62,10 +70,10 @@ keyboard.onKeyDown = function onKeyDown( event )
 
 keyboard.onKeyUp = function onKeyUp( event )
 {
-	var key = event.keyCode || event.which ;
-	var keychar = String.fromCharCode( key ) ;
+	var keyCode = event.keyCode ;
+	var keyChar = String.fromCharCode( keyCode ) ;
 	
-	switch( key )
+	switch( keyCode )
 	{
 		case 225:
 			keyboard.altgr = false ;
