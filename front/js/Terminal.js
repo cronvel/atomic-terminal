@@ -384,6 +384,11 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 					this.newLine() ;
 					break ;
 				case 0x0d :
+					this.newLine() ;
+					// PTY may emit both a carriage return and a newline when a single newline is emitted from the real child process
+					if ( chunk[ index + 1 ] === 0x0a ) { bytes ++ ; }
+					break ;
+				case 0x0d :
 					this.moveTo( 1 , undefined ) ;
 					break ;
 				case 0x1b :
@@ -437,13 +442,19 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 
 Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 {
-	switch ( String.fromCharCode( chunk[ index ] ) )
+	var char = String.fromCharCode( chunk[ index ] ) ;
+	
+	switch ( char )
 	{
 		case '[' :
 			if ( index + 1 < chunk.length ) { return this.csiSequence( chunk , index + 1 ) ; }
+		
+		default :
+			// Unknown sequence
+			this.printChar( '\x1b' ) ;
+			this.printChar( char ) ;
+			return 2 ;
 	}
-	
-	return null ;
 } ;
 
 

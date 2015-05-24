@@ -25,8 +25,6 @@
 
 
 // Modules
-//var spawn = require( 'child_process' ).spawn ;
-var spawn = require( 'child_pty' ).spawn ;
 var events = require( 'events' ) ;
 var tree = require( 'tree-kit' ) ;
 
@@ -48,12 +46,15 @@ module.exports = ChildProcess ;
 
 
 
-ChildProcess.create = function create( command , args )
+ChildProcess.create = function create( command , args , spawn )
 {
 	var child = Object.create( ChildProcess.prototype ) ;
 	
 	child.command = command ;
 	child.args = args || [] ;
+	
+	//child.spawn = spawn || require( 'child_process' ).spawn ;
+	child.spawn = spawn || require( 'child_pty' ).spawn ;
 	
 	return child ;
 } ;
@@ -64,11 +65,12 @@ ChildProcess.prototype.run = function run()
 {
 	var self = this ;
 	
-	this.child = spawn( this.command , this.args , {
+	this.child = this.spawn( this.command , this.args , {
 		env: tree.extend( null , {} , process.env , {
 			TERM: 'xterm-256color' ,
 			COLORTERM: 'atomic-terminal'
 		} ) ,
+		stdio: [ 'pipe' , 'pipe' , 'pipe' ] ,
 		columns: 80 ,
 		rows: 24
 	} ) ;
@@ -103,10 +105,8 @@ ChildProcess.prototype.run = function run()
 
 ChildProcess.prototype.input = function input( string )
 {
-	// Something is wrong, the child do not receive any data ATM :'(
-	console.log( "bob" ) ;
-	//this.child.stdin.write( string ) ;
-	this.child.stdin.write( 'a\n' ) ;
+	//console.log( "debug -- sending: " , string ) ;
+	this.child.stdin.write( string ) ;
 } ;
 
 

@@ -1,0 +1,21 @@
+
+Few things to know about PTY, when a child process is created with child_pty instead of child_process.
+This can avoid few hours of “WTF is going on?”.
+
+
+
+Parent -> PTY STDIN -> Child STDIN
+Child STDOUT -> PTY STDOUT -> Parent
+
+* everything sent to PTY's STDIN is immediately echoed to PTY's STDOUT...
+* ... but the Child's STDIN will receive that only when a newline is sent (line discipline)
+* ... so what the Parent receive is NOT NECESSARLY something the Child sent
+
+* in Raw Mode, it's almost working as if the PTY was not here, for the input processing
+
+* if the Child output a newline, the PTY emit both a carriage return and a newline, in that order (really confusing...)
+
+
+
+
+
