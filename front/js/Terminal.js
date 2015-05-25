@@ -87,8 +87,15 @@ Terminal.create = function create( options )
 		hidden: false ,
 		strike: false ,
 		classAttr: null ,
-		styleAttr: null
+		styleAttr: null ,
+		
+		// not related to the blink attribute, it just define the cursor blinking state
+		blinkingState: false
 	} ;
+	
+	terminal.savedCursorPosition = { x: 1 , y: 1 } ;
+	
+	terminal.state = [] ;
 	
 	terminal.remoteWin = remote.getCurrentWindow() ;
 	
@@ -115,10 +122,12 @@ Terminal.prototype.createLayout = function createLayout()
 	
 	for ( y = 1 ; y <= this.height ; y ++ )
 	{
+		this.state[ y - 1 ] = [] ;
 		trElement = document.createElement( 'tr' ) ;
 		
 		for ( x = 1 ; x <= this.width ; x ++ )
 		{
+			this.state[ y - 1 ][ x - 1 ] = { char: ' ' } ;
 			divElement = document.createElement( 'div' ) ;
 			divElement.setAttribute( 'class' , 'fgColor' + this.defaultFgColorIndex + ' bgColor' + this.defaultBgColorIndex ) ;
 			tdElement = document.createElement( 'td' ) ;
@@ -229,8 +238,8 @@ Terminal.prototype.updateAttrs = function updateAttrs()
 {
 	var fgColor , bgColor , attr = [] , style = [] , tmp ;
 	
-	fgColor = this.cursor.fgColor === false ? this.defaultFgColorIndex : this.cursor.fgColor ;
-	bgColor = this.cursor.bgColor === false ? this.defaultBgColorIndex : this.cursor.bgColor ;
+	fgColor = this.cursor.fgColor || this.cursor.fgColor === 0 ? this.cursor.fgColor : this.defaultFgColorIndex ;
+	bgColor = this.cursor.bgColor || this.cursor.bgColor === 0 ? this.cursor.bgColor : this.defaultBgColorIndex ;
 	
 	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
 	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
@@ -255,14 +264,38 @@ Terminal.prototype.updateAttrs = function updateAttrs()
 
 
 
+Terminal.prototype.updateCursor = function updateCursor()
+{
+} ;
+
+
+
 Terminal.prototype.printChar = function printChar( char )
 {
 	var element ;
 	
 	// Get the div inside the table cell
+	//try {
 	element = this.domContentTable.rows[ this.cursor.y - 1 ].cells[ this.cursor.x - 1 ].firstChild ;
+	//} catch ( error ) { console.log( 'Error, coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')  [' + this.width + ',' + this.height + ']' ) ; throw error ; }
+	
+	// Update the internal state
+	this.state[ this.cursor.y - 1 ][ this.cursor.x - 1 ] = {
+		char: char ,
+		fgColor: this.cursor.fgColor ,
+		bgColor: this.cursor.bgColor ,
+		bold: this.cursor.bold ,
+		dim: this.cursor.dim ,
+		italic: this.cursor.italic ,
+		underline: this.cursor.underline ,
+		blink: this.cursor.blink ,
+		inverse: this.cursor.inverse ,
+		hidden: this.cursor.hidden ,
+		strike: this.cursor.strike
+	} ;
 	
 	element.textContent = char ;
+	
 	//console.log( 'attr: ' + this.cursor.classAttr ) ;
 	element.setAttribute( 'class' , this.cursor.classAttr ) ;
 	element.setAttribute( 'style' , this.cursor.styleAttr ) ;
@@ -289,16 +322,20 @@ Terminal.prototype.printChar = function printChar( char )
 
 Terminal.prototype.scrollDown = function scrollDown()
 {
-	var x , trElement , tdElement , divElement ;
+	var x , trElement , tdElement , divElement , lastStateRow ;
 	
 	// Delete the first row
+	this.state.shift() ;
 	this.domContentTable.deleteRow( 0 ) ;
 	
 	// Create a new row at the end of the table
+	lastStateRow = this.state.length ;
+	this.state[ lastStateRow ] = [] ;
 	trElement = this.domContentTable.insertRow() ;
 	
 	for ( x = 1 ; x <= this.width ; x ++ )
 	{
+		this.state[ lastStateRow ][ x - 1 ] = { char: ' ' } ;
 		divElement = document.createElement( 'div' ) ;
 		divElement.setAttribute( 'class' , 'fgColor' + this.defaultFgColorIndex + ' bgColor' + this.defaultBgColorIndex ) ;
 		tdElement = document.createElement( 'td' ) ;
@@ -327,6 +364,8 @@ Terminal.prototype.newLine = function newLine()
 
 Terminal.prototype.moveTo = function moveTo( x , y )
 {
+	//console.log( '< moveTo coordinate: (' + this.cursor.x + ',' + this.cursor.y + ') {' + x + ',' + y + '}' ) ;
+	
 	if ( x !== undefined )
 	{
 		this.cursor.x = Math.max( 1 , Math.min( x , this.width ) ) ;	// bound to 1-width range
@@ -336,12 +375,16 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 	{
 		this.cursor.y = Math.max( 1 , Math.min( y , this.height ) ) ;	// bound to 1-height range
 	}
+	
+	//console.log( '> moveTo coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
 
 
 
 Terminal.prototype.move = function move( x , y )
 {
+	//console.log( '< move coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
+	
 	if ( x !== undefined )
 	{
 		this.cursor.x = Math.max( 1 , Math.min( this.cursor.x + x , this.width ) ) ;	// bound to 1-width range
@@ -351,6 +394,8 @@ Terminal.prototype.move = function move( x , y )
 	{
 		this.cursor.y = Math.max( 1 , Math.min( this.cursor.y + y , this.height ) ) ;	// bound to 1-height range
 	}
+	
+	//console.log( '> move coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
 
 

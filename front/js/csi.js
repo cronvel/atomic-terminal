@@ -35,7 +35,11 @@ var i ;
 
 function parseNumbers( sequence )
 {
-	return sequence.split( ';' ).map( function( value ) { return parseInt( value , 10 ) ; } ) ;
+	return sequence.split( ';' ).map( function( value ) {
+		value = parseInt( value , 10 ) ;
+		if ( isNaN( value ) ) { return undefined ; }
+		return value ;
+	} ) ;
 }
 
 
@@ -56,7 +60,15 @@ csi.G = function column( sequence ) { this.moveTo( parseNumbers( sequence )[ 0 ]
 
 csi.H = function moveTo( sequence )
 {
+	if ( sequence === '' )
+	{
+		// Without params, it should go to the top-left corner
+		this.moveTo( 1 , 1 ) ;
+		return ;
+	}
+	
 	var params = parseNumbers( sequence ) ;
+	//console.log( 'csi moveTo - sequence: "' + sequence + '"  (' + params[ 1 ] + ',' + params[ 0 ] + ')' ) ;
 	this.moveTo( params[ 1 ] , params[ 0 ] ) ;
 } ;
 
