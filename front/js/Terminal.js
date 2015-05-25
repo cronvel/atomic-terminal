@@ -93,10 +93,15 @@ Terminal.create = function create( options )
 		screenX: 1 ,
 		screenY: 1 ,
 		screenInverse: false ,
-		screenHidden: false
+		screenHidden: false ,
+		
+		blinkTimer: undefined ,
+		blinkTimeout: 500 ,
+		steadyTimeout: 1000	,	// Time before blinking again
 	} ;
 	
 	terminal.savedCursorPosition = { x: 1 , y: 1 } ;
+	terminal.blinkCursorTimeout = blinkCursorTimeout.bind( terminal ) ;
 	
 	terminal.state = [] ;
 	
@@ -224,6 +229,7 @@ Terminal.prototype.start = function start()
 	this.domContentDiv.focus() ;
 	this.domContentDiv.onkeydown = Terminal.keyboard.onKeyDown.bind( this ) ;
 	this.domContentDiv.onkeypress = Terminal.keyboard.onKeyPress.bind( this ) ;
+	this.blinkCursorTimeout() ;
 } ;	
 
 
@@ -280,14 +286,17 @@ Terminal.prototype.attrsFromObject = function attrsFromObject( object , inverse 
 
 
 
-Terminal.prototype.updateCursor = function updateCursor( restoreCell )
+// blink: called by a blinking cursor method
+Terminal.prototype.updateCursor = function updateCursor( restoreCell , blink )
 {
 	var attrs , element ;
 	
 	// Check if something has changed, or if the cursor is visible or not
-	if ( this.cursor.screenHidden || ( this.cursor.x === this.cursor.screenX && this.cursor.y === this.cursor.screenY ) ) { return ; }
-	
-	this.cursor.screenInverse = true ;
+	if ( this.cursor.screenHidden ||
+		( ! blink && this.cursor.x === this.cursor.screenX && this.cursor.y === this.cursor.screenY ) )
+	{
+		return ;
+	}
 	
 	if ( restoreCell &&
 		this.cursor.screenX >= 1 && this.cursor.screenX <= this.width &&
@@ -304,11 +313,27 @@ Terminal.prototype.updateCursor = function updateCursor( restoreCell )
 	this.cursor.screenX = this.cursor.x ;
 	this.cursor.screenY = this.cursor.y ;
 	
+	if ( ! blink && this.cursor.blinkTimer )
+	{
+		this.cursor.screenInverse = true ;
+		clearTimeout( this.cursor.blinkTimer ) ;
+		this.cursor.blinkTimer = setTimeout( this.blinkCursorTimeout , this.cursor.steadyTimeout ) ;
+	}
+	
 	// Inverse the cell where the cursor is
-	attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] , true ) ;
+	attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] , this.cursor.screenInverse ) ;
 	element = this.domContentTable.rows[ this.cursor.screenY - 1 ].cells[ this.cursor.screenX - 1 ].firstChild ;
 	element.setAttribute( 'class' , attrs.class ) ;
 	element.setAttribute( 'style' , attrs.style ) ;
+} ;
+
+
+
+function blinkCursorTimeout()
+{
+	this.cursor.screenInverse = ! this.cursor.screenInverse ;
+	this.updateCursor( false , true ) ;
+	this.cursor.blinkTimer = setTimeout( this.blinkCursorTimeout , this.cursor.blinkTimeout ) ;
 } ;
 
 
