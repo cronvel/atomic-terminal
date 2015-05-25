@@ -71,7 +71,7 @@ Terminal.create = function create( options )
 	terminal.font = {
 		family: 'monospace' ,
 		size: 18
-	}
+	} ;
 	
 	terminal.cursor = {
 		x: 1 ,
@@ -89,8 +89,11 @@ Terminal.create = function create( options )
 		classAttr: null ,
 		styleAttr: null ,
 		
-		// not related to the blink attribute, it just define the cursor blinking state
-		blinkingState: false
+		// Position on the screen, may differ from x,y until .updateCursor() is called
+		screenX: 1 ,
+		screenY: 1 ,
+		screenInverse: false ,
+		screenHidden: false
 	} ;
 	
 	terminal.savedCursorPosition = { x: 1 , y: 1 } ;
@@ -236,21 +239,32 @@ function parseNumbers( sequence )
 
 Terminal.prototype.updateAttrs = function updateAttrs()
 {
+	var attrs = this.attrsFromObject( this.cursor ) ;
+	
+	this.cursor.classAttr = attrs.class ;
+	this.cursor.styleAttr = attrs.style ;
+} ;
+
+
+
+// Extra 'inverse' is used for cursor update, to not have to clone the object...
+Terminal.prototype.attrsFromObject = function attrsFromObject( object , inverse )
+{
 	var fgColor , bgColor , attr = [] , style = [] , tmp ;
 	
-	fgColor = this.cursor.fgColor || this.cursor.fgColor === 0 ? this.cursor.fgColor : this.defaultFgColorIndex ;
-	bgColor = this.cursor.bgColor || this.cursor.bgColor === 0 ? this.cursor.bgColor : this.defaultBgColorIndex ;
+	fgColor = object.fgColor || object.fgColor === 0 ? object.fgColor : this.defaultFgColorIndex ;
+	bgColor = object.bgColor || object.bgColor === 0 ? object.bgColor : this.defaultBgColorIndex ;
 	
-	if ( this.cursor.bold ) { attr.push( 'bold' ) ; }
-	if ( this.cursor.dim ) { attr.push( 'dim' ) ; }
-	if ( this.cursor.italic ) { attr.push( 'italic' ) ; }
-	if ( this.cursor.underline ) { attr.push( 'underline' ) ; }
-	if ( this.cursor.blink ) { attr.push( 'blink' ) ; }
-	if ( this.cursor.strike ) { attr.push( 'strike' ) ; }
+	if ( object.bold ) { attr.push( 'bold' ) ; }
+	if ( object.dim ) { attr.push( 'dim' ) ; }
+	if ( object.italic ) { attr.push( 'italic' ) ; }
+	if ( object.underline ) { attr.push( 'underline' ) ; }
+	if ( object.blink ) { attr.push( 'blink' ) ; }
+	if ( object.strike ) { attr.push( 'strike' ) ; }
 	
-	if ( this.cursor.inverse ) { tmp = bgColor ; bgColor = fgColor ; fgColor = tmp ; }
+	if ( ! object.inverse !== ! inverse ) { tmp = bgColor ; bgColor = fgColor ; fgColor = tmp ; }
 	
-	if ( this.cursor.hidden ) { fgColor = bgColor ; }
+	if ( object.hidden ) { fgColor = bgColor ; }
 	
 	if ( Array.isArray( fgColor ) ) { style.push( 'color: rgb(' + fgColor.join( ',' ) + ');' ) ; }
 	else { attr.push( 'fgColor' + fgColor ) ; }
@@ -258,14 +272,43 @@ Terminal.prototype.updateAttrs = function updateAttrs()
 	if ( Array.isArray( bgColor ) ) { style.push( 'background-color: rgb(' + bgColor.join( ',' ) + ');' ) ; }
 	else { attr.push( 'bgColor' + bgColor ) ; }
 	
-	this.cursor.classAttr = attr.join( ' ' ) || null ;
-	this.cursor.styleAttr = style.join( ' ' ) || null ;
+	return {
+		class: attr.join( ' ' ) || null ,
+		style: style.join( ' ' ) || null 
+	} ;
 } ;
 
 
 
-Terminal.prototype.updateCursor = function updateCursor()
+Terminal.prototype.updateCursor = function updateCursor( restoreCell )
 {
+	var attrs , element ;
+	
+	// Check if something has changed, or if the cursor is visible or not
+	if ( this.cursor.screenHidden || ( this.cursor.x === this.cursor.screenX && this.cursor.y === this.cursor.screenY ) ) { return ; }
+	
+	this.cursor.screenInverse = true ;
+	
+	if ( restoreCell &&
+		this.cursor.screenX >= 1 && this.cursor.screenX <= this.width &&
+		this.cursor.screenY >= 1 && this.cursor.screenY <= this.height )
+	{
+		// Restore the previous cell with the correct attributes
+		attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] ) ;
+		element = this.domContentTable.rows[ this.cursor.screenY - 1 ].cells[ this.cursor.screenX - 1 ].firstChild ;
+		element.setAttribute( 'class' , attrs.class ) ;
+		element.setAttribute( 'style' , attrs.style ) ;
+	}
+	
+	// Update the screenX and screenY
+	this.cursor.screenX = this.cursor.x ;
+	this.cursor.screenY = this.cursor.y ;
+	
+	// Inverse the cell where the cursor is
+	attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] , true ) ;
+	element = this.domContentTable.rows[ this.cursor.screenY - 1 ].cells[ this.cursor.screenX - 1 ].firstChild ;
+	element.setAttribute( 'class' , attrs.class ) ;
+	element.setAttribute( 'style' , attrs.style ) ;
 } ;
 
 
@@ -310,10 +353,12 @@ Terminal.prototype.printChar = function printChar( char )
 		
 		if ( this.cursor.y > this.height )
 		{
-			this.cursor.y = this.height ;
+			//this.cursor.y = this.height ;	// now done by .scrollDown()
 			this.scrollDown() ;
 		}
 	}
+	
+	this.updateCursor() ;
 	
 	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
 } ;
@@ -342,6 +387,10 @@ Terminal.prototype.scrollDown = function scrollDown()
 		tdElement.appendChild( divElement ) ;
 		trElement.appendChild( tdElement ) ;
 	}
+	
+	// Update cursor's coordinate
+	this.cursor.y -- ;
+	this.cursor.screenY -- ;
 } ;
 
 
@@ -353,9 +402,11 @@ Terminal.prototype.newLine = function newLine()
 	
 	if ( this.cursor.y > this.height )
 	{
-		this.cursor.y = this.height ;
+		//this.cursor.y = this.height ;	// now done by .scrollDown()
 		this.scrollDown() ;
 	}
+	
+	this.updateCursor( true ) ;
 	
 	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
 } ;
@@ -376,6 +427,8 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 		this.cursor.y = Math.max( 1 , Math.min( y , this.height ) ) ;	// bound to 1-height range
 	}
 	
+	this.updateCursor( true ) ;
+	
 	//console.log( '> moveTo coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
 
@@ -395,6 +448,8 @@ Terminal.prototype.move = function move( x , y )
 		this.cursor.y = Math.max( 1 , Math.min( this.cursor.y + y , this.height ) ) ;	// bound to 1-height range
 	}
 	
+	this.updateCursor( true ) ;
+	
 	//console.log( '> move coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
 
@@ -409,7 +464,7 @@ Terminal.prototype.saveCursorPosition = function saveCursorPosition()
 
 Terminal.prototype.restoreCursorPosition = function restoreCursorPosition()
 {
-	if ( this.savedCursorPosition ) { this.moveTo( this.savedCursorPosition.x , this.savedCursorPosition.y ) ; }
+	this.moveTo( this.savedCursorPosition.x , this.savedCursorPosition.y ) ;
 } ;
 
 
