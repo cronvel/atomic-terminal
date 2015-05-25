@@ -210,6 +210,7 @@ Terminal.prototype.start = function start()
 	// Give focus to the content div and register keyDown events
 	this.domContentDiv.focus() ;
 	this.domContentDiv.onkeydown = Terminal.keyboard.onKeyDown.bind( this ) ;
+	this.domContentDiv.onkeypress = Terminal.keyboard.onKeyPress.bind( this ) ;
 	this.domContentDiv.onkeyup = Terminal.keyboard.onKeyUp.bind( this ) ;
 } ;	
 
