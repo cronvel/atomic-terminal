@@ -105,7 +105,7 @@ ChildProcess.prototype.run = function run()
 
 ChildProcess.prototype.input = function input( string )
 {
-	//console.log( "debug -- sending: " , string ) ;
+	//console.log( 'debug -- sending: "' + string + '"' ) ;
 	this.child.stdin.write( string ) ;
 } ;
 

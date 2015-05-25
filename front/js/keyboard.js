@@ -76,8 +76,9 @@ keyboard.onKeyDown = function onKeyDown( event )
 			break ;
 		
 		case 32:
-			// NUL
-			if ( event.ctrlKey ) { key = '\x00' ; }
+			if ( event.ctrlKey && event.altKey ) { key = '\x1b\x00' ; }	// ESC NUL
+			else if ( event.ctrlKey ) { key = '\x00' ; }	// NUL
+			else if ( event.altKey ) { key = '\x1b ' ; }	// ESC SPACE
 			break ;
 		
 		// PAGE UP
@@ -238,6 +239,12 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else { key = '\x1b[24~' ; }
 			break ;
 		
+		// Caret, etc
+		case 229:
+			if ( event.shiftKey ) { key = '¨' ; }
+			else { key = '^' ; }
+			break ;
+		
 		default :
 			
 			if ( event.ctrlKey )
@@ -266,7 +273,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 				keyChar +
 				' [' + keyCode + ']'
 			) ;
-			*/
+			//*/
 			break ;
 	}
 	
@@ -291,13 +298,14 @@ keyboard.onKeyPress = function( event )
 	//console.log( string.inspect( { style: 'color' , depth: 1 } , event ) ) ;
 	
 	// In those case, let onKeyDown handle things
-	if ( keyCode < 0x20 || event.ctrlKey || event.altKey || event.metaKey ) { return false ; }
+	if ( keyCode < 0x20 || keyCode === 0x7f || event.ctrlKey || event.altKey || event.metaKey ) { return false ; }
 	
 	// So we have got a regular character, just emit it
 	
 	event.preventDefault() ;
 	//event.stopPropagation() ;
 	
+	/*
 	console.log( "keypress: " +
 		keyChar +
 		' [' + keyCode + '][' +
@@ -307,8 +315,10 @@ keyboard.onKeyPress = function( event )
 		( event.metaKey ? ' Meta ' : '' ) +
 		']'
 	) ;
+	//*/
 	
 	this.remoteWin.childProcess.input( keyChar ) ;
+	//console.log( 'input keyChar: "' + keyChar + '"' ) ;
 	
 	// Important
 	return false;
@@ -316,17 +326,5 @@ keyboard.onKeyPress = function( event )
 
 
 
-keyboard.onKeyUp = function onKeyUp( event )
-{
-	var keyCode = event.keyCode ;
-	var keyChar = String.fromCharCode( keyCode ) ;
-	
-	switch( keyCode )
-	{
-		case 225:
-			keyboard.altgr = false ;
-			break ;
-	}
-} ;
 
 

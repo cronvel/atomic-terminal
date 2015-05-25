@@ -26,6 +26,7 @@
 
 // Load modules
 var remote = require( 'remote' ) ;
+var punycode = require( 'punycode' ) ;
 var async = require( 'async-kit' ) ;
 var string = require( 'string-kit' ) ;
 var tree = require( 'tree-kit' ) ;
@@ -211,7 +212,6 @@ Terminal.prototype.start = function start()
 	this.domContentDiv.focus() ;
 	this.domContentDiv.onkeydown = Terminal.keyboard.onKeyDown.bind( this ) ;
 	this.domContentDiv.onkeypress = Terminal.keyboard.onKeyPress.bind( this ) ;
-	this.domContentDiv.onkeyup = Terminal.keyboard.onKeyUp.bind( this ) ;
 } ;	
 
 
@@ -407,12 +407,13 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 			else if ( chunk[ index ] < 0xfc ) { bytes = 5 ; }
 			else { bytes = 6 ; }
 			
-			buffer = chunk.slice( index , index.bytes ) ;
+			buffer = chunk.slice( index , index + bytes ) ;
 			char = buffer.toString( 'utf8' ) ;
 			
 			if ( bytes > 2 ) { codepoint = punycode.ucs2.decode( char )[ 0 ] ; }
 			else { codepoint = char.charCodeAt( 0 ) ; }
 			
+			//console.log( 'multibyte char "' + char + '"' ) ;
 			this.printChar( char ) ;
 			//this.emit( 'key' , char , [ char ] , { isCharacter: true , codepoint: codepoint , code: buffer } ) ;
 		}
