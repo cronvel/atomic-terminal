@@ -340,7 +340,32 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 
 
 
-Terminal.prototype.move = function move( x , y ) { this.moveTo( this.cursor.x + x , this.cursor.y + y ) ; }
+Terminal.prototype.move = function move( x , y )
+{
+	if ( x !== undefined )
+	{
+		this.cursor.x = Math.max( 1 , Math.min( this.cursor.x + x , this.width ) ) ;	// bound to 1-width range
+	}
+	
+	if ( y !== undefined )
+	{
+		this.cursor.y = Math.max( 1 , Math.min( this.cursor.y + y , this.height ) ) ;	// bound to 1-height range
+	}
+} ;
+
+
+
+Terminal.prototype.saveCursorPosition = function saveCursorPosition()
+{
+	this.savedCursorPosition = { x: this.cursor.x , y: this.cursor.y } ;
+} ;
+
+
+
+Terminal.prototype.restoreCursorPosition = function restoreCursorPosition()
+{
+	if ( this.savedCursorPosition ) { this.moveTo( this.savedCursorPosition.x , this.savedCursorPosition.y ) ; }
+} ;
 
 
 
@@ -388,9 +413,6 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 					this.newLine() ;
 					// PTY may emit both a carriage return and a newline when a single newline is emitted from the real child process
 					if ( chunk[ index + 1 ] === 0x0a ) { bytes ++ ; }
-					break ;
-				case 0x0d :
-					this.moveTo( 1 , undefined ) ;
 					break ;
 				case 0x1b :
 					if ( index + 1 < length ) { bytes = this.escapeSequence( chunk , index + 1 ) ; }
@@ -450,6 +472,19 @@ Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 	{
 		case '[' :
 			if ( index + 1 < chunk.length ) { return this.csiSequence( chunk , index + 1 ) ; }
+			return null ;
+		
+		case '7' :
+			this.saveCursorPosition() ;
+			return 2 ;
+		
+		case '8' :
+			this.restoreCursorPosition() ;
+			return 2 ;
+		
+		case 'F' :	// move to bottom-left
+			this.moveTo( 1 , this.height ) ;
+			return 2 ;
 		
 		default :
 			// Unknown sequence

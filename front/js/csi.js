@@ -54,11 +54,14 @@ csi.E = function nextLine( sequence ) { this.moveTo( 1 , this.cursor.y + parseNu
 csi.F = function previousLine( sequence ) { this.moveTo( 1 , this.cursor.y - parseNumbers( sequence )[ 0 ] ) ; } ;
 csi.G = function column( sequence ) { this.moveTo( parseNumbers( sequence )[ 0 ] ) ; } ;
 
-csi.G = function moveTo( sequence )
+csi.H = function moveTo( sequence )
 {
 	var params = parseNumbers( sequence ) ;
 	this.moveTo( params[ 1 ] , params[ 0 ] ) ;
 } ;
+
+csi.s = function saveCursor() { this.saveCursorPosition() ; } ;
+csi.u = function restoreCursor() { this.restoreCursorPosition() ; } ;
 
 
 
