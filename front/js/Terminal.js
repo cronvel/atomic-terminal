@@ -41,6 +41,7 @@ module.exports = Terminal ;
 
 // Submodule parts
 Terminal.csi = require( './csi.js' ) ;
+Terminal.osc = require( './osc.js' ) ;
 Terminal.keyboard = require( './keyboard.js' ) ;
 
 
@@ -111,6 +112,9 @@ Terminal.create = function create( options )
 	terminal.defaultFgColorIndex = 7 ;
 	terminal.defaultBgColorIndex = 0 ;
 	terminal.dimAlpha = 0.5 ;
+	
+	terminal.cwd = '/' ;	// Temp?
+	
 	//console.log( string.inspect( { style: 'color' } , terminal.palette ) ) ; process.exit() ;
 	terminal.paletteStyle( true , true ) ;
 	
@@ -494,6 +498,87 @@ Terminal.prototype.restoreCursorPosition = function restoreCursorPosition()
 
 
 
+Terminal.prototype.erase = function erase( type )
+{
+	var x , y , cell , attrs , element ,
+		yMin , yMax , xMinInline , xMaxInline , xMin , xMax ;
+	
+	attrs = this.attrsFromObject( {
+		fgColor: this.cursor.fgColor ,
+		bgColor: this.cursor.bgColor
+	} ) ;
+	
+	switch ( type )
+	{
+		case 'all' :
+			yMin = 1 ;
+			yMax = this.height ;
+			xMinInline = 1 ;
+			xMaxInline = this.width ;
+			break ;
+		
+		case 'line' :
+			yMin = this.cursor.y ;
+			yMax = this.cursor.y ;
+			xMinInline = 1 ;
+			xMaxInline = this.width ;
+			break ;
+		
+		case 'above' :
+			yMin = 1 ;
+			yMax = this.cursor.y ;
+			xMinInline = 1 ;
+			xMaxInline = this.cursor.x ;	// Erase the cursor's cell too
+			break ;
+		
+		case 'below' :
+			yMin = this.cursor.y ;
+			yMax = this.height ;
+			xMinInline = this.cursor.x ;	// Erase the cursor's cell too
+			xMaxInline = this.width ;
+			break ;
+		
+		case 'lineAfter' :
+			yMin = this.cursor.y ;
+			yMax = this.cursor.y ;
+			xMinInline = this.cursor.y ;	// Erase the cursor's cell too
+			xMaxInline = this.width ;
+			break ;
+		
+		case 'lineBefore' :
+			yMin = this.cursor.y ;
+			yMax = this.cursor.y ;
+			xMinInline = 1 ;
+			xMaxInline = this.cursor.y ;	// Erase the cursor's cell too
+			break ;
+	}
+	
+	for ( y = yMin ; y <= yMax ; y ++ )
+	{
+		xMin = y === yMin ? xMinInline : 1 ;
+		xMax = y === yMax ? xMaxInline : this.width ;
+		
+		for ( x = xMin ; x <= xMax ; x ++ )
+		{
+			// We should create a unique object for each cell
+			this.state[ y - 1 ][ x - 1 ] = {
+				char: ' ' ,
+				fgColor: this.cursor.fgColor ,
+				bgColor: this.cursor.bgColor
+			} ;
+			
+			element = this.domContentTable.rows[ y - 1 ].cells[ x - 1 ].firstChild ;
+			element.textContent = ' ' ;
+			
+			//console.log( 'attr: ' + this.cursor.classAttr ) ;
+			element.setAttribute( 'class' , attrs.class ) ;
+			element.setAttribute( 'style' , attrs.style ) ;
+		}
+	}
+} ;
+
+
+
 
 
 			/* STDOUT parsing */
@@ -541,6 +626,11 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 					break ;
 				case 0x1b :
 					if ( index + 1 < length ) { bytes = this.escapeSequence( chunk , index + 1 ) ; }
+					break ;
+				default :
+					char = chunk[ index ].toString( 16 ) ;
+					if ( char.length === 1 ) { char = '0' + char ; }
+					console.log( 'Not implemented: 0x' + char ) ;
 					break ;
 			}
 		}
@@ -599,6 +689,10 @@ Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 			if ( index + 1 < chunk.length ) { return this.csiSequence( chunk , index + 1 ) ; }
 			return null ;
 		
+		case ']' :
+			if ( index + 1 < chunk.length ) { return this.oscSequence( chunk , index + 1 ) ; }
+			return null ;
+		
 		case '7' :
 			this.saveCursorPosition() ;
 			return 2 ;
@@ -613,8 +707,12 @@ Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 		
 		default :
 			// Unknown sequence
+			console.log( 'Not implemented: ESC "' + char + '"' ) ;
+			
+			/*
 			this.printChar( '\x1b' ) ;
 			this.printChar( char ) ;
+			//*/
 			return 2 ;
 	}
 } ;
@@ -634,12 +732,59 @@ Terminal.prototype.csiSequence = function csiSequence( chunk , index )
 		if ( chunk[ i ] >= 0x40 )
 		{
 			if ( Terminal.csi[ char ] ) { Terminal.csi[ char ].call( this , sequence ) ; }
+			else { console.log( 'Not implemented: CSI "' + char + '" (sequence: "' + sequence + '")' ) ; }
+			
 			return sequence.length + 3 ;	// ESC + [ + sequence + terminator
 		}
 		
 		sequence += char ;
 	}
 	
+	// We should never reach here, except if the buffer was too short
+	return null ;
+} ;
+
+
+
+Terminal.prototype.oscSequence = function oscSequence( chunk , index )
+{
+	var i , bytes , char , sequence = '' , index , num ;
+	
+	
+	for ( i = index ; i < chunk.length ; i ++ )
+	{
+		char = String.fromCharCode( chunk[ i ] ) ;
+		
+		// Check for sequence terminator
+		// 0x07 = Bell
+		// 0x1b = Esc
+		// 0x5c = \
+		if ( ( chunk[ i ] === 0x07 ) || ( chunk[ i ] === 0x1b && chunk[ i + 1 ] === 0x5c ) )
+		{
+			index = sequence.indexOf( ';' ) ;
+			
+			if ( index > 0 )
+			{
+				num = parseInt( sequence.slice( 0 , index ) , 10 ) ;
+				
+				if ( ! isNaN( num ) )
+				{
+					if ( Terminal.osc[ num ] ) { Terminal.osc[ num ].call( this , sequence.slice( index + 1 ) ) ; }
+					else { console.log( 'Not implemented: OSC "' + num + '" (sequence: ' + sequence.slice( index + 1 ) + '")' ) ; }
+				}
+				else
+				{
+					console.log( "Trouble: NaN!" ) ;
+				}
+			}
+			
+			return sequence.length + 2 + ( chunk[ i ] === 0x07 ? 1 : 2 ) ;	// ESC + ] + sequence + Bell/ST
+		}
+		
+		sequence += char ;
+	}
+	
+	console.log( "Trouble: " + string.escape.control( chunk.toString() ) ) ;
 	// We should never reach here, except if the buffer was too short
 	return null ;
 } ;

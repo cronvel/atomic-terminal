@@ -50,12 +50,42 @@ function parseNumbers( sequence )
 
 
 
-csi.A = function up( sequence ) { this.move( undefined , - parseNumbers( sequence )[ 0 ] ) ; } ;
-csi.B = function down( sequence ) { this.move( undefined , parseNumbers( sequence )[ 0 ] ) ; } ;
-csi.C = function right( sequence ) { this.move( parseNumbers( sequence )[ 0 ] ) ; } ;
-csi.D = function left( sequence ) { this.move( - parseNumbers( sequence )[ 0 ] ) ; } ;
-csi.E = function nextLine( sequence ) { this.moveTo( 1 , this.cursor.y + parseNumbers( sequence )[ 0 ] ) ; } ;
-csi.F = function previousLine( sequence ) { this.moveTo( 1 , this.cursor.y - parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.A = function up( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.move( undefined , - ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
+} ;
+
+csi.B = function down( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.move( undefined , ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
+} ;
+
+csi.C = function right( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.move( ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
+} ;
+
+csi.D = function left( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.move( - ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
+} ;
+
+csi.E = function nextLine( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.moveTo( 1 , this.cursor.y + ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
+} ;
+
+csi.F = function previousLine( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.moveTo( 1 , this.cursor.y - ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
+} ;
+
 csi.G = function column( sequence ) { this.moveTo( parseNumbers( sequence )[ 0 ] ) ; } ;
 
 csi.H = function moveTo( sequence )
@@ -79,6 +109,56 @@ csi.u = function restoreCursor() { this.restoreCursorPosition() ; } ;
 
 
 
+			/* Styles and colors */
+
+
+
+csi.J = function eraseDisplay( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	
+	switch ( params[ 0 ] )
+	{
+		case 1 :
+			this.erase( 'above' ) ;
+			break ;
+		case 2 :
+			this.erase( 'all' ) ;
+			break ;
+		case 3 :
+			// Not implemented: erase saved lines (xterm specific)
+			break ;
+		
+		//case 0 :
+		default :
+			this.erase( 'below' ) ;
+			break ;
+	}
+} ;
+
+
+
+csi.K = function eraseLine( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	
+	switch ( params[ 0 ] )
+	{
+		case 1 :
+			this.erase( 'lineBefore' ) ;
+			break ;
+		case 2 :
+			this.erase( 'line' ) ;
+			break ;
+		
+		//case 0 :
+		default :
+			this.erase( 'lineAfter' ) ;
+			break ;
+	}
+} ;
+
+
 
 
 
@@ -89,7 +169,9 @@ csi.u = function restoreCursor() { this.restoreCursorPosition() ; } ;
 csi.m = function characterAttributes( sequence )
 {
 	var params = parseNumbers( sequence ) ;
+	
 	if ( csi.m[ params[ 0 ] ] ) { csi.m[ params[ 0 ] ].apply( this , params.slice( 1 ) ) ; }
+	else { console.log( 'Not implemented: CSI m "' + sequence + '" (SGR)' ) ; }
 } ;
 
 
@@ -209,7 +291,7 @@ function createSetFgColor( c )
 		this.cursor.fgColor = c ;
 		this.updateAttrs() ;
 	} ;
-} ;
+}
 
 function createSetBgColor( c )
 { 
@@ -217,7 +299,7 @@ function createSetBgColor( c )
 		this.cursor.bgColor = c ;
 		this.updateAttrs() ;
 	} ;
-} ;
+}
 
 for ( i = 0 ; i < 8 ; i ++ )
 {

@@ -23,13 +23,6 @@ var esc = {
 	
 			/* Editing sequences */
 	
-	clear: { on: '\x1b[H\x1b[2J' } ,
-	eraseDisplayBelow: { on: '\x1b[0J' } ,
-	eraseDisplayAbove: { on: '\x1b[1J' } ,
-	eraseDisplay: { on: '\x1b[2J' } ,
-	eraseLineAfter: { on: '\x1b[0K' } ,
-	eraseLineBefore: { on: '\x1b[1K' } ,
-	eraseLine: { on: '\x1b[2K' } ,
 	insertLine: { on: '\x1b[%UL' } ,
 	deleteLine: { on: '\x1b[%UM' } ,
 	insert: { on: '\x1b[%U@' } ,	// insert char
