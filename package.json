@@ -1,6 +1,6 @@
 {
   "name": "atomic-terminal",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "A terminal powered by Electron",
   "main": "app.js",
   "directories": {
