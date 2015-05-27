@@ -320,6 +320,9 @@ Terminal.prototype.updateCursor = function updateCursor( restoreCell , blink )
 	this.cursor.screenX = this.cursor.x ;
 	this.cursor.screenY = this.cursor.y ;
 	
+	
+	if ( this.cursor.x > this.width ) { return ; }
+	
 	if ( ! blink && this.cursor.blinkTimer )
 	{
 		this.cursor.screenInverse = true ;
@@ -349,6 +352,18 @@ Terminal.prototype.printChar = function printChar( char )
 {
 	var element ;
 	
+	if ( this.cursor.x > this.width )
+	{
+		this.cursor.x = 1 ;
+		this.cursor.y ++ ;
+		
+		if ( this.cursor.y > this.height )
+		{
+			//this.cursor.y = this.height ;	// now done by .scrollDown()
+			this.scrollDown() ;
+		}
+	}
+	
 	// Get the div inside the table cell
 	//try {
 	element = this.domContentTable.rows[ this.cursor.y - 1 ].cells[ this.cursor.x - 1 ].firstChild ;
@@ -375,20 +390,7 @@ Terminal.prototype.printChar = function printChar( char )
 	element.setAttribute( 'class' , this.cursor.classAttr ) ;
 	element.setAttribute( 'style' , this.cursor.styleAttr ) ;
 	
-	
 	this.cursor.x ++ ;
-	
-	if ( this.cursor.x > this.width )
-	{
-		this.cursor.x = 1 ;
-		this.cursor.y ++ ;
-		
-		if ( this.cursor.y > this.height )
-		{
-			//this.cursor.y = this.height ;	// now done by .scrollDown()
-			this.scrollDown() ;
-		}
-	}
 	
 	this.cursor.updateNeeded = true ;
 	
@@ -454,7 +456,7 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 	
 	if ( x !== undefined )
 	{
-		this.cursor.x = Math.max( 1 , Math.min( x , this.width ) ) ;	// bound to 1-width range
+		this.cursor.x = Math.max( 1 , Math.min( x , this.width + 1 ) ) ;	// bound to 1-width range
 	}
 	
 	if ( y !== undefined )
@@ -476,7 +478,7 @@ Terminal.prototype.move = function move( x , y )
 	
 	if ( x !== undefined )
 	{
-		this.cursor.x = Math.max( 1 , Math.min( this.cursor.x + x , this.width ) ) ;	// bound to 1-width range
+		this.cursor.x = Math.max( 1 , Math.min( this.cursor.x + x , this.width + 1 ) ) ;	// bound to 1-width range
 	}
 	
 	if ( y !== undefined )
@@ -536,20 +538,20 @@ Terminal.prototype.erase = function erase( type )
 			yMin = 1 ;
 			yMax = this.cursor.y ;
 			xMinInline = 1 ;
-			xMaxInline = this.cursor.x ;	// Erase the cursor's cell too
+			xMaxInline = Math.min( this.cursor.x , this.width ) ;	// Erase the cursor's cell too
 			break ;
 		
 		case 'below' :
 			yMin = this.cursor.y ;
 			yMax = this.height ;
-			xMinInline = this.cursor.x ;	// Erase the cursor's cell too
+			xMinInline = Math.min( this.cursor.x , this.width ) ;	// Erase the cursor's cell too
 			xMaxInline = this.width ;
 			break ;
 		
 		case 'lineAfter' :
 			yMin = this.cursor.y ;
 			yMax = this.cursor.y ;
-			xMinInline = this.cursor.x ;	// Erase the cursor's cell too
+			xMinInline = Math.min( this.cursor.x , this.width ) ;	// Erase the cursor's cell too
 			xMaxInline = this.width ;
 			break ;
 		
@@ -557,7 +559,7 @@ Terminal.prototype.erase = function erase( type )
 			yMin = this.cursor.y ;
 			yMax = this.cursor.y ;
 			xMinInline = 1 ;
-			xMaxInline = this.cursor.x ;	// Erase the cursor's cell too
+			xMaxInline = Math.min( this.cursor.x , this.width ) ;	// Erase the cursor's cell too
 			break ;
 		
 		default :
@@ -595,6 +597,8 @@ Terminal.prototype.delete = function delete_( n )
 {
 	var i , attrs , element ;
 	
+	if ( this.cursor.x > this.width ) { return ; }
+	
 	if ( n === undefined ) { n = 1 ; }
 	
 	attrs = this.attrsFromObject( {
@@ -629,6 +633,8 @@ Terminal.prototype.delete = function delete_( n )
 Terminal.prototype.insert = function insert( n )
 {
 	var i , attrs , element ;
+	
+	if ( this.cursor.x > this.width ) { return ; }
 	
 	if ( n === undefined ) { n = 1 ; }
 	
