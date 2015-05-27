@@ -231,8 +231,14 @@ csi.m = function characterAttributes( sequence )
 	{
 		if ( params[ i ] === undefined ) { continue ; }
 		
-		if ( csi.m[ params[ i ] ] ) { csi.m[ params[ i ] ].call( this ) ; }
-		else { console.error( 'Not implemented: CSI m (SGR) "' + params[ i ] + '" full sequence: "' + sequence + '"' ) ; }
+		if ( csi.m[ params[ i ] ] )
+		{
+			i += csi.m[ params[ i ] ].apply( this , params.slice( i + 1 ) ) ;
+		}
+		else
+		{
+			console.error( 'Not implemented: CSI m (SGR) "' + params[ i ] + '" full sequence: "' + sequence + '"' ) ;
+		}
 	}
 } ;
 
@@ -385,12 +391,14 @@ csi.m[ 38 ] = function setHighFgColor()
 		// 24 bits True Colors
 		this.cursor.fgColor = [ arguments[ 1 ] , arguments[ 2 ] , arguments[ 3 ] ] ;
 		this.updateAttrs() ;
+		return 4 ;
 	}
 	else
 	{
 		// 256 colors
 		this.cursor.fgColor = arguments[ 1 ] ;
 		this.updateAttrs() ;
+		return 2 ;
 	}
 } ;
 
@@ -405,12 +413,14 @@ csi.m[ 48 ] = function setHighBgColor()
 		// 24 bits True Colors
 		this.cursor.bgColor = [ arguments[ 1 ] , arguments[ 2 ] , arguments[ 3 ] ] ;
 		this.updateAttrs() ;
+		return 4 ;
 	}
 	else
 	{
 		// 256 colors
 		this.cursor.bgColor = arguments[ 1 ] ;
 		this.updateAttrs() ;
+		return 2 ;
 	}
 } ;
 

@@ -13,7 +13,7 @@
     "electron-prebuilt": "^0.26.0",
     "electron-rebuild": "^0.1.4",
     "string-kit": "^0.1.10",
-    "terminal-kit": "^0.12.7",
+    "terminal-kit": "^0.13.1",
     "tree-kit": "^0.5.5"
   },
   "devDependencies": {

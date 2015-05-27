@@ -834,6 +834,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 
 
 
+// TODO: switch case -> hashmap
 Terminal.prototype.controlCharacter = function controlCharacter( chunk , index )
 {
 	switch ( chunk[ index ] )
@@ -868,6 +869,7 @@ Terminal.prototype.controlCharacter = function controlCharacter( chunk , index )
 
 
 
+// TODO: switch case -> hashmap
 Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 {
 	var char = String.fromCharCode( chunk[ index ] ) ;
