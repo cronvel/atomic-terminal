@@ -508,7 +508,7 @@ Terminal.prototype.restoreCursorPosition = function restoreCursorPosition()
 
 Terminal.prototype.erase = function erase( type )
 {
-	var x , y , cell , attrs , element ,
+	var x , y , attrs , element ,
 		yMin , yMax , xMinInline , xMaxInline , xMin , xMax ;
 	
 	attrs = this.attrsFromObject( {
@@ -549,7 +549,7 @@ Terminal.prototype.erase = function erase( type )
 		case 'lineAfter' :
 			yMin = this.cursor.y ;
 			yMax = this.cursor.y ;
-			xMinInline = this.cursor.y ;	// Erase the cursor's cell too
+			xMinInline = this.cursor.x ;	// Erase the cursor's cell too
 			xMaxInline = this.width ;
 			break ;
 		
@@ -557,8 +557,12 @@ Terminal.prototype.erase = function erase( type )
 			yMin = this.cursor.y ;
 			yMax = this.cursor.y ;
 			xMinInline = 1 ;
-			xMaxInline = this.cursor.y ;	// Erase the cursor's cell too
+			xMaxInline = this.cursor.x ;	// Erase the cursor's cell too
 			break ;
+		
+		default :
+			throw new Error( '.erase(): unknown type "' + type + '"' ) ;
+			return ;
 	}
 	
 	for ( y = yMin ; y <= yMax ; y ++ )
@@ -587,6 +591,41 @@ Terminal.prototype.erase = function erase( type )
 
 
 
+Terminal.prototype.delete = function delete_( n )
+{
+	var i , attrs , element ;
+	
+	if ( n === undefined ) { n = 1 ; }
+	
+	attrs = this.attrsFromObject( {
+		fgColor: this.cursor.fgColor ,
+		bgColor: this.cursor.bgColor
+	} ) ;
+	
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		// Delete the cell
+		this.state[ this.cursor.y - 1 ].splice( this.cursor.x - 1 , 1 ) ;
+		this.domContentTable.rows[ this.cursor.y - 1 ].deleteCell( this.cursor.x - 1 ) ;
+		
+		// Create a new empty cell at the end of the row
+		// We should create a unique object for each cell
+		this.state[ this.cursor.y - 1 ].push( {
+			char: ' ' ,
+			fgColor: this.cursor.fgColor ,
+			bgColor: this.cursor.bgColor
+		} ) ;
+		
+		element = document.createElement( 'div' ) ;
+		element.textContent = ' ' ;
+		element.setAttribute( 'class' , attrs.class ) ;
+		element.setAttribute( 'style' , attrs.style ) ;
+		this.domContentTable.rows[ this.cursor.y - 1 ].insertCell().appendChild( element ) ;
+	}
+} ;
+
+
+
 
 
 			/* STDOUT parsing */
@@ -606,6 +645,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 	
 	//if ( ! Buffer.isBuffer( chunk ) ) { throw new Error( 'not a buffer' ) ; }
 	//console.log( 'Chunk: \n' + string.inspect( { style: 'color' } , chunk ) ) ;
+	//console.error( 'Chunk:\n' + string.escape.control( chunk.toString() ) ) ;
 	
 	// I know that converting from binary string is deprecated, but I don't really have the choice here
 	if ( typeof chunk === 'string' ) { chunk = new Buffer( chunk , 'binary' ) ; }
@@ -678,6 +718,12 @@ Terminal.prototype.controlCharacter = function controlCharacter( chunk , index )
 {
 	switch ( chunk[ index ] )
 	{
+		// Backspace, it does *NOT* delete, it's just like the left arrow
+		case 0x08 :
+		case 0x7f :
+			this.move( -1 ) ;
+			return 1 ;
+		
 		// New Line
 		case 0x0a :
 			this.newLine() ;

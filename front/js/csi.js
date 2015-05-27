@@ -86,9 +86,19 @@ csi.F = function previousLine( sequence )
 	this.moveTo( 1 , this.cursor.y - ( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ) ;
 } ;
 
-csi.G = function column( sequence ) { this.moveTo( parseNumbers( sequence )[ 0 ] ) ; } ;
+csi.G = csi['`'] = function column( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.moveTo( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
 
-csi.H = function moveTo( sequence )
+csi.a = function relativeColumn( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.move( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
+
+csi.H = csi.f = function moveTo( sequence )
 {
 	if ( sequence === '' )
 	{
@@ -102,14 +112,28 @@ csi.H = function moveTo( sequence )
 	this.moveTo( params[ 1 ] , params[ 0 ] ) ;
 } ;
 
+//csi.I = function tab( sequence )
+
 csi.s = function saveCursor() { this.saveCursorPosition() ; } ;
 csi.u = function restoreCursor() { this.restoreCursorPosition() ; } ;
 
+csi.d = function row( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.moveTo( undefined , params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
+
+csi.e = function relativeRow( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.move( undefined , params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
 
 
 
 
-			/* Styles and colors */
+
+			/* Editing */
 
 
 
@@ -160,6 +184,14 @@ csi.K = function eraseLine( sequence )
 
 
 
+csi.P = function delete_( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.delete( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
+
+
+
 
 
 			/* Styles and colors */
@@ -168,10 +200,16 @@ csi.K = function eraseLine( sequence )
 
 csi.m = function characterAttributes( sequence )
 {
+	var i ;
 	var params = parseNumbers( sequence ) ;
 	
-	if ( csi.m[ params[ 0 ] ] ) { csi.m[ params[ 0 ] ].apply( this , params.slice( 1 ) ) ; }
-	else { console.error( 'Not implemented: CSI m "' + sequence + '" (SGR)' ) ; }
+	for ( i = 0 ; i < params.length ; i ++ )
+	{
+		if ( params[ i ] === undefined ) { continue ; }
+		
+		if ( csi.m[ params[ i ] ] ) { csi.m[ params[ i ] ].call( this ) ; }
+		else { console.error( 'Not implemented: CSI m (SGR) "' + params[ i ] + '" full sequence: "' + sequence + '"' ) ; }
+	}
 } ;
 
 
