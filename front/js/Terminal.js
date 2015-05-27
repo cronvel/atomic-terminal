@@ -626,6 +626,8 @@ Terminal.prototype.delete = function delete_( n )
 		element.setAttribute( 'style' , attrs.style ) ;
 		this.domContentTable.rows[ this.cursor.y - 1 ].insertCell().appendChild( element ) ;
 	}
+	
+	this.cursor.updateNeeded = true ;
 } ;
 
 
@@ -663,6 +665,10 @@ Terminal.prototype.insert = function insert( n )
 		element.setAttribute( 'style' , attrs.style ) ;
 		this.domContentTable.rows[ this.cursor.y - 1 ].insertCell( this.cursor.x - 1 ).appendChild( element ) ;
 	}
+	
+	this.cursor.screenX += n ;
+	this.cursor.updateNeeded = true ;
+	this.cursor.restoreCellNeeded = true ;
 } ;
 
 
@@ -706,6 +712,8 @@ Terminal.prototype.deleteLine = function deleteLine( n )
 			trElement.appendChild( tdElement ) ;
 		}
 	}
+	
+	this.cursor.updateNeeded = true ;
 } ;
 
 
@@ -748,6 +756,10 @@ Terminal.prototype.insertLine = function insertLine( n )
 			trElement.appendChild( tdElement ) ;
 		}
 	}
+	
+	this.cursor.screenY += n ;
+	this.cursor.updateNeeded = true ;
+	this.cursor.restoreCellNeeded = true ;
 } ;
 
 

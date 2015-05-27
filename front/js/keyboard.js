@@ -135,12 +135,14 @@ keyboard.onKeyDown = function onKeyDown( event )
 		
 		// INSERT
 		case 45:
-			key = '\x1b[2~' ;
+			if ( event.altKey ) { key = '\x1b[2;3~' ; }
+			else { key = '\x1b[2~' ; }
 			break ;
 		
 		// DELETE
 		case 46:
-			key = '\x1b[3~' ;
+			if ( event.altKey ) { key = '\x1b[3;3~' ; }
+			else { key = '\x1b[3~' ; }
 			break ;
 		
 		// F1
