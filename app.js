@@ -41,21 +41,31 @@ app.on( 'window-all-closed' , function() {
 
 
 
+var argPos , devTools = false , args = process.argv.slice() ;
+
+// Open dev tools?
+if ( ( argPos = args.indexOf( '--dev' ) ) !== -1 )
+{
+	args.splice( argPos , 1 ) ;
+	devTools = true ;
+}
+
+
 // This method will be called when atom-shell has done everything
 // initialization and ready for creating browser windows.
 app.on( 'ready' , function() {
 	
 	// Create the browser window.
 	mainWindow = new BrowserWindow( {
-		width: 900 ,
-		height: 600
+		width: 830 ,
+		height: 480
 	} ) ;
 	
 	// Open dev tools?
-	if ( process.argv.indexOf( '--dev' ) !== -1 ) { mainWindow.openDevTools() ; }
+	if ( devTools ) { mainWindow.openDevTools() ; }
 	
-	mainWindow.command = { path: process.argv[ 2 ] , args: process.argv.slice( 3 ) } ;
-	mainWindow.childProcess = ChildProcess.create( process.argv[ 2 ] , process.argv.slice( 3 ) ) ;
+	mainWindow.command = { path: args[ 2 ] , args: args.slice( 3 ) } ;
+	mainWindow.childProcess = ChildProcess.create( args[ 2 ] , args.slice( 3 ) ) ;
 	
 	// and load the index.html of the app.
 	mainWindow.loadUrl( 'file://' + __dirname + '/front/terminal.html' ) ;

@@ -626,6 +626,126 @@ Terminal.prototype.delete = function delete_( n )
 
 
 
+Terminal.prototype.insert = function insert( n )
+{
+	var i , attrs , element ;
+	
+	if ( n === undefined ) { n = 1 ; }
+	
+	attrs = this.attrsFromObject( {
+		fgColor: this.cursor.fgColor ,
+		bgColor: this.cursor.bgColor
+	} ) ;
+	
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		// Delete the last cell
+		this.state[ this.cursor.y - 1 ].pop() ;
+		this.domContentTable.rows[ this.cursor.y - 1 ].deleteCell( -1 ) ;
+		
+		// Create a new empty cell at the cursor position
+		// We should create a unique object for each cell
+		this.state[ this.cursor.y - 1 ].splice( this.cursor.x - 1 , 0 , {
+			char: ' ' ,
+			fgColor: this.cursor.fgColor ,
+			bgColor: this.cursor.bgColor
+		} ) ;
+		
+		element = document.createElement( 'div' ) ;
+		element.textContent = ' ' ;
+		element.setAttribute( 'class' , attrs.class ) ;
+		element.setAttribute( 'style' , attrs.style ) ;
+		this.domContentTable.rows[ this.cursor.y - 1 ].insertCell( this.cursor.x - 1 ).appendChild( element ) ;
+	}
+} ;
+
+
+
+Terminal.prototype.deleteLine = function deleteLine( n )
+{
+	var i , x , attrs , trElement , tdElement , divElement , lastStateRow ;
+	
+	if ( n === undefined ) { n = 1 ; }
+	
+	attrs = this.attrsFromObject( {
+		fgColor: this.cursor.fgColor ,
+		bgColor: this.cursor.bgColor
+	} ) ;
+	
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		// Delete the row
+		this.state.splice( this.cursor.y - 1 , 1 ) ;
+		this.domContentTable.deleteRow( this.cursor.y - 1 ) ;
+		
+		// Create a new row at the end of the table
+		lastStateRow = this.state.length ;
+		this.state[ lastStateRow ] = [] ;
+		trElement = this.domContentTable.insertRow() ;
+		
+		for ( x = 1 ; x <= this.width ; x ++ )
+		{
+			// We should create a unique object for each cell
+			this.state[ lastStateRow ][ x - 1 ] = {
+				char: ' ' ,
+				fgColor: this.cursor.fgColor ,
+				bgColor: this.cursor.bgColor
+			} ;
+			
+			divElement = document.createElement( 'div' ) ;
+			divElement.setAttribute( 'class' , attrs.class ) ;
+			divElement.setAttribute( 'style' , attrs.style ) ;
+			tdElement = document.createElement( 'td' ) ;
+			tdElement.appendChild( divElement ) ;
+			trElement.appendChild( tdElement ) ;
+		}
+	}
+} ;
+
+
+
+Terminal.prototype.insertLine = function insertLine( n )
+{
+	var i , x , attrs , trElement , tdElement , divElement ;
+	
+	if ( n === undefined ) { n = 1 ; }
+	
+	attrs = this.attrsFromObject( {
+		fgColor: this.cursor.fgColor ,
+		bgColor: this.cursor.bgColor
+	} ) ;
+	
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		// Delete the last row
+		this.state.pop() ;
+		this.domContentTable.deleteRow( -1 ) ;
+		
+		// Create a new row where the cursor is
+		this.state.splice( this.cursor.y - 1 , 0 , [] ) ;
+		trElement = this.domContentTable.insertRow( this.cursor.y - 1 ) ;
+		
+		for ( x = 1 ; x <= this.width ; x ++ )
+		{
+			// We should create a unique object for each cell
+			this.state[ this.cursor.y - 1 ][ x - 1 ] = {
+				char: ' ' ,
+				fgColor: this.cursor.fgColor ,
+				bgColor: this.cursor.bgColor
+			} ;
+			
+			divElement = document.createElement( 'div' ) ;
+			divElement.setAttribute( 'class' , attrs.class ) ;
+			divElement.setAttribute( 'style' , attrs.style ) ;
+			tdElement = document.createElement( 'td' ) ;
+			tdElement.appendChild( divElement ) ;
+			trElement.appendChild( tdElement ) ;
+		}
+	}
+} ;
+
+
+
 
 
 			/* STDOUT parsing */
@@ -773,6 +893,18 @@ Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 		case 'F' :	// move to bottom-left
 			this.moveTo( 1 , this.height ) ;
 			return 2 ;
+		
+		// Deprecated: no-op, change the character set
+		case ' ' :
+		case '#' :
+		case '%' :
+		case '(' :
+		case ')' :
+		case '*' :
+		case '+' :
+		case '-' :
+		case '/' :
+			return 3 ;
 		
 		default :
 			// Unknown sequence

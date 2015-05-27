@@ -184,10 +184,34 @@ csi.K = function eraseLine( sequence )
 
 
 
+csi['@'] = function insert( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.insert( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
+
+
+
 csi.P = function delete_( sequence )
 {
 	var params = parseNumbers( sequence ) ;
 	this.delete( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
+
+
+
+csi.L = function insertLine( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.insertLine( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
+} ;
+
+
+
+csi.M = function deleteLine( sequence )
+{
+	var params = parseNumbers( sequence ) ;
+	this.deleteLine( params[ 0 ] === undefined ? 1 : params[ 0 ] ) ;
 } ;
 
 
