@@ -233,7 +233,7 @@ csi.m = function characterAttributes( sequence )
 		
 		if ( csi.m[ params[ i ] ] )
 		{
-			i += csi.m[ params[ i ] ].apply( this , params.slice( i + 1 ) ) ;
+			i += csi.m[ params[ i ] ].apply( this , params.slice( i + 1 ) ) || 0 ;
 		}
 		else
 		{
