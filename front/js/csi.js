@@ -171,7 +171,7 @@ csi.m = function characterAttributes( sequence )
 	var params = parseNumbers( sequence ) ;
 	
 	if ( csi.m[ params[ 0 ] ] ) { csi.m[ params[ 0 ] ].apply( this , params.slice( 1 ) ) ; }
-	else { console.log( 'Not implemented: CSI m "' + sequence + '" (SGR)' ) ; }
+	else { console.error( 'Not implemented: CSI m "' + sequence + '" (SGR)' ) ; }
 } ;
 
 

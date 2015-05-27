@@ -99,6 +99,9 @@ Terminal.create = function create( options )
 		blinkTimer: undefined ,
 		blinkTimeout: 500 ,
 		steadyTimeout: 1000	,	// Time before blinking again
+		
+		updateNeeded: false ,
+		restoreCellNeeded: false
 	} ;
 	
 	terminal.savedCursorPosition = { x: 1 , y: 1 } ;
@@ -272,7 +275,7 @@ Terminal.prototype.attrsFromObject = function attrsFromObject( object , inverse 
 	if ( object.blink ) { attr.push( 'blink' ) ; }
 	if ( object.strike ) { attr.push( 'strike' ) ; }
 	
-	if ( ! object.inverse !== ! inverse ) { tmp = bgColor ; bgColor = fgColor ; fgColor = tmp ; }
+	if ( ! object.inverse !== ! inverse ) { tmp = bgColor ; bgColor = fgColor ; fgColor = tmp ; }	// jshint ignore:line
 	
 	if ( object.hidden ) { fgColor = bgColor ; }
 	
@@ -338,7 +341,7 @@ function blinkCursorTimeout()
 	this.cursor.screenInverse = ! this.cursor.screenInverse ;
 	this.updateCursor( false , true ) ;
 	this.cursor.blinkTimer = setTimeout( this.blinkCursorTimeout , this.cursor.blinkTimeout ) ;
-} ;
+}
 
 
 
@@ -387,7 +390,7 @@ Terminal.prototype.printChar = function printChar( char )
 		}
 	}
 	
-	this.updateCursor() ;
+	this.cursor.updateNeeded = true ;
 	
 	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
 } ;
@@ -424,9 +427,11 @@ Terminal.prototype.scrollDown = function scrollDown()
 
 
 
-Terminal.prototype.newLine = function newLine()
+// Notice: PTY may emit both a carriage return followed by a newline when a single newline is emitted from the real child process
+Terminal.prototype.newLine = function newLine( carriageReturn )
 {
-	this.cursor.x = 1 ;
+	if ( carriageReturn ) { this.cursor.x = 1 ; }
+	
 	this.cursor.y ++ ;
 	
 	if ( this.cursor.y > this.height )
@@ -435,7 +440,8 @@ Terminal.prototype.newLine = function newLine()
 		this.scrollDown() ;
 	}
 	
-	this.updateCursor( true ) ;
+	this.cursor.updateNeeded = true ;
+	this.cursor.restoreCellNeeded = true ;
 	
 	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
 } ;
@@ -456,7 +462,8 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 		this.cursor.y = Math.max( 1 , Math.min( y , this.height ) ) ;	// bound to 1-height range
 	}
 	
-	this.updateCursor( true ) ;
+	this.cursor.updateNeeded = true ;
+	this.cursor.restoreCellNeeded = true ;
 	
 	//console.log( '> moveTo coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
@@ -477,7 +484,8 @@ Terminal.prototype.move = function move( x , y )
 		this.cursor.y = Math.max( 1 , Math.min( this.cursor.y + y , this.height ) ) ;	// bound to 1-height range
 	}
 	
-	this.updateCursor( true ) ;
+	this.cursor.updateNeeded = true ;
+	this.cursor.restoreCellNeeded = true ;
 	
 	//console.log( '> move coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
@@ -592,6 +600,10 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 		regexp , matches , bytes , found , handlerResult ,
 		index = 0 , length = chunk.length ;
 	
+	// Reset cursor update
+	this.cursor.updateNeeded = false ;
+	this.cursor.restoreCellNeeded = false ;
+	
 	//if ( ! Buffer.isBuffer( chunk ) ) { throw new Error( 'not a buffer' ) ; }
 	//console.log( 'Chunk: \n' + string.inspect( { style: 'color' } , chunk ) ) ;
 	
@@ -613,26 +625,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 		if ( chunk[ index ] <= 0x1f || chunk[ index ] === 0x7f )
 		{
 			// Those are ASCII control character and DEL key
-			
-			switch ( chunk[ index ] )
-			{
-				case 0x0a :
-					this.newLine() ;
-					break ;
-				case 0x0d :
-					this.newLine() ;
-					// PTY may emit both a carriage return and a newline when a single newline is emitted from the real child process
-					if ( chunk[ index + 1 ] === 0x0a ) { bytes ++ ; }
-					break ;
-				case 0x1b :
-					if ( index + 1 < length ) { bytes = this.escapeSequence( chunk , index + 1 ) ; }
-					break ;
-				default :
-					char = chunk[ index ].toString( 16 ) ;
-					if ( char.length === 1 ) { char = '0' + char ; }
-					console.log( 'Not implemented: 0x' + char ) ;
-					break ;
-			}
+			bytes = this.controlCharacter( chunk , index ) ;
 		}
 		else if ( chunk[ index ] >= 0x80 )
 		{
@@ -675,6 +668,36 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 	}
 	
 	this.onStdoutRemainder = null ;
+	
+	if ( this.cursor.updateNeeded ) { this.updateCursor( this.cursor.restoreCellNeeded ) ; }
+} ;
+
+
+
+Terminal.prototype.controlCharacter = function controlCharacter( chunk , index )
+{
+	switch ( chunk[ index ] )
+	{
+		// New Line
+		case 0x0a :
+			this.newLine() ;
+			return 1 ;
+		
+		// Carriage Return
+		// PTY may emit both a carriage return followed by a newline when a single newline is emitted from the real child process
+		case 0x0d :
+			this.moveTo( 1 ) ;
+			return 1 ;
+			
+		// Escape
+		case 0x1b :
+			if ( index + 1 < chunk.length ) { return this.escapeSequence( chunk , index + 1 ) ; }
+			return 1 ;
+		
+		default :
+			console.error( string.format( 'Not implemented: Control 0x%x' , chunk[ index ] ) ) ;
+			return 1 ;
+	}
 } ;
 
 
@@ -707,7 +730,7 @@ Terminal.prototype.escapeSequence = function escapeSequence( chunk , index )
 		
 		default :
 			// Unknown sequence
-			console.log( 'Not implemented: ESC "' + char + '"' ) ;
+			console.error( 'Not implemented: ESC "' + char + '"' ) ;
 			
 			/*
 			this.printChar( '\x1b' ) ;
@@ -732,7 +755,7 @@ Terminal.prototype.csiSequence = function csiSequence( chunk , index )
 		if ( chunk[ i ] >= 0x40 )
 		{
 			if ( Terminal.csi[ char ] ) { Terminal.csi[ char ].call( this , sequence ) ; }
-			else { console.log( 'Not implemented: CSI "' + char + '" (sequence: "' + sequence + '")' ) ; }
+			else { console.error( 'Not implemented: CSI "' + char + '" (sequence: "' + sequence + '")' ) ; }
 			
 			return sequence.length + 3 ;	// ESC + [ + sequence + terminator
 		}
@@ -770,7 +793,7 @@ Terminal.prototype.oscSequence = function oscSequence( chunk , index )
 				if ( ! isNaN( num ) )
 				{
 					if ( Terminal.osc[ num ] ) { Terminal.osc[ num ].call( this , sequence.slice( index + 1 ) ) ; }
-					else { console.log( 'Not implemented: OSC "' + num + '" (sequence: ' + sequence.slice( index + 1 ) + '")' ) ; }
+					else { console.error( 'Not implemented: OSC "' + num + '" (sequence: ' + sequence.slice( index + 1 ) + '")' ) ; }
 				}
 				else
 				{
@@ -788,9 +811,6 @@ Terminal.prototype.oscSequence = function oscSequence( chunk , index )
 	// We should never reach here, except if the buffer was too short
 	return null ;
 } ;
-
-
-
 
 
 
