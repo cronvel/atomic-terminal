@@ -1,6 +1,6 @@
 /*
-	Copyright (c) 2015 Cédric Ronvel 
-	
+	Copyright (c) 2015 Cédric Ronvel
+
 	The MIT License (MIT)
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,8 +29,6 @@ module.exports = osc ;
 
 
 
-var i ;
-
 
 
 function parseNumbers( sequence )
@@ -55,5 +53,3 @@ osc[ 7 ] = function setCwd( sequence )
 	// This is sent (e.g. by bash) to let the terminal knows about the Current Working Directory
 	this.cwd = sequence ;
 } ;
-
-

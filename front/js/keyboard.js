@@ -1,6 +1,6 @@
 /*
-	Copyright (c) 2015 Cédric Ronvel 
-	
+	Copyright (c) 2015 Cédric Ronvel
+
 	The MIT License (MIT)
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,11 +24,6 @@
 
 
 
-// Load modules
-var string = require( 'string-kit' ) ;
-
-
-
 var keyboard = {} ;
 module.exports = keyboard ;
 
@@ -40,9 +35,8 @@ keyboard.onKeyDown = function onKeyDown( event )
 {
 	//console.log( string.inspect( { style: 'color' , depth: 1 } , event ) ) ;
 	var keyCode = event.keyCode ;
-	var keyChar = String.fromCharCode( keyCode ) ;
 	var key ;
-	
+
 	switch( keyCode )
 	{
 		case 16:
@@ -51,56 +45,56 @@ keyboard.onKeyDown = function onKeyDown( event )
 		case 225:
 			// shift, ctrl, alt, altgr: do nothing when those key are pressed alone
 			break ;
-		
+
 		// BACKSPACE
 		case 8:
 			if ( event.shiftKey ) { key = '\x08' ; }	// backspace / shift backspace
 			else { key = '\x7f' ; }
 			break ;
-		
+
 		// TAB
 		case 9:
 			if ( event.shiftKey ) { key = '\x1b[Z' ; }
 			else if ( event.altKey ) { key = '\x1b\x09' ; }
 			else { key = '\x09' ; }
 			break ;
-		
+
 		// ENTER / RETURN
 		case 13:
 			key = '\x0d' ;
 			break ;
-		
+
 		// ESCAPE
 		case 27:
 			key = '\x1b' ;
 			break ;
-		
+
 		case 32:
 			if ( event.ctrlKey && event.altKey ) { key = '\x1b\x00' ; }	// ESC NUL
 			else if ( event.ctrlKey ) { key = '\x00' ; }	// NUL
 			else if ( event.altKey ) { key = '\x1b ' ; }	// ESC SPACE
 			break ;
-		
+
 		// PAGE UP
 		case 33:
 			key = '\x1b[5~' ;
 			break ;
-		
+
 		// PAGE DOWN
 		case 34:
 			key = '\x1b[6~' ;
 			break ;
-		
+
 		// END
 		case 35:
 			key = '\x1b[4~' ;
 			break ;
-		
+
 		// HOME
 		case 36:
 			key = '\x1b[1~' ;
 			break ;
-		
+
 		// LEFT
 		case 37:
 			if ( event.shiftKey ) { key = '\x1b[1;2D' ; }
@@ -108,7 +102,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[1;5D' ; }
 			else { key = '\x1b[D' ; }
 			break ;
-		
+
 		// UP
 		case 38:
 			if ( event.shiftKey ) { key = '\x1b[1;2A' ; }
@@ -116,7 +110,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[1;5A' ; }
 			else { key = '\x1b[A' ; }
 			break ;
-		
+
 		// RIGHT
 		case 39:
 			if ( event.shiftKey ) { key = '\x1b[1;2C' ; }
@@ -124,7 +118,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[1;5C' ; }
 			else { key = '\x1b[C' ; }
 			break ;
-		
+
 		// DOWN
 		case 40:
 			if ( event.shiftKey ) { key = '\x1b[1;2B' ; }
@@ -132,19 +126,19 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[1;5B' ; }
 			else { key = '\x1b[B' ; }
 			break ;
-		
+
 		// INSERT
 		case 45:
 			if ( event.altKey ) { key = '\x1b[2;3~' ; }
 			else { key = '\x1b[2~' ; }
 			break ;
-		
+
 		// DELETE
 		case 46:
 			if ( event.altKey ) { key = '\x1b[3;3~' ; }
 			else { key = '\x1b[3~' ; }
 			break ;
-		
+
 		// F1
 		case 112:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1bO1;6P' ; }
@@ -152,7 +146,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1bO1;5P' ; }
 			else { key = '\x1bOP' ; }
 			break ;
-		
+
 		// F2
 		case 113:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1bO1;6Q' ; }
@@ -160,7 +154,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1bO1;5Q' ; }
 			else { key = '\x1bOQ' ; }
 			break ;
-		
+
 		// F3
 		case 114:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1bO1;6R' ; }
@@ -168,7 +162,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1bO1;5R' ; }
 			else { key = '\x1bOR' ; }
 			break ;
-		
+
 		// F4
 		case 115:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1bO1;6S' ; }
@@ -176,7 +170,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1bO1;5S' ; }
 			else { key = '\x1bOS' ; }
 			break ;
-		
+
 		// F5
 		case 116:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[15;6~' ; }
@@ -184,7 +178,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[15;5~' ; }
 			else { key = '\x1b[15~' ; }
 			break ;
-		
+
 		// F6
 		case 117:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[17;6~' ; }
@@ -192,7 +186,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[17;5~' ; }
 			else { key = '\x1b[17~' ; }
 			break ;
-		
+
 		// F7
 		case 118:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[18;6~' ; }
@@ -200,7 +194,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[18;5~' ; }
 			else { key = '\x1b[18~' ; }
 			break ;
-		
+
 		// F8
 		case 119:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[19;6~' ; }
@@ -208,7 +202,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[19;5~' ; }
 			else { key = '\x1b[19~' ; }
 			break ;
-		
+
 		// F9
 		case 120:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[20;6~' ; }
@@ -216,7 +210,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[20;5~' ; }
 			else { key = '\x1b[20~' ; }
 			break ;
-		
+
 		// F10
 		case 121:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[21;6~' ; }
@@ -224,7 +218,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[21;5~' ; }
 			else { key = '\x1b[21~' ; }
 			break ;
-		
+
 		// F11
 		case 122:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[23;6~' ; }
@@ -232,7 +226,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[23;5~' ; }
 			else { key = '\x1b[23~' ; }
 			break ;
-		
+
 		// F12
 		case 123:
 			if ( event.shiftKey && event.ctrlKey ) { key = '\x1b[24;6~' ; }
@@ -240,15 +234,15 @@ keyboard.onKeyDown = function onKeyDown( event )
 			else if ( event.ctrlKey ) { key = '\x1b[24;5~' ; }
 			else { key = '\x1b[24~' ; }
 			break ;
-		
+
 		// Caret, etc
 		case 229:
 			if ( event.shiftKey ) { key = '¨' ; }
 			else { key = '^' ; }
 			break ;
-		
+
 		default :
-			
+
 			if ( event.ctrlKey )
 			{
 				if ( keyCode >= 65 && keyCode <= 90 )
@@ -265,7 +259,7 @@ keyboard.onKeyDown = function onKeyDown( event )
 					key = '\x1b' + String.fromCharCode( keyCode + ( event.shiftKey ? 0 : 32 ) ) ;
 				}
 			}
-			
+
 			/*
 			console.log( "keydown: " +
 				( event.shiftKey ? 'Shift+' : '' ) +
@@ -278,15 +272,15 @@ keyboard.onKeyDown = function onKeyDown( event )
 			//*/
 			break ;
 	}
-	
+
 	// We should NOT return false here: it would prevent the 'keypress' event from firing
 	if ( key === undefined ) { return ; }
-	
+
 	event.preventDefault() ;
 	//event.stopPropagation() ;
-	
+
 	this.remoteWin.childProcess.input( key ) ;
-	
+
 	// Important
 	return false ;
 } ;
@@ -298,15 +292,15 @@ keyboard.onKeyPress = function( event )
 	var keyCode = event.keyCode ;
 	var keyChar = String.fromCharCode( keyCode ) ;
 	//console.log( string.inspect( { style: 'color' , depth: 1 } , event ) ) ;
-	
+
 	// In those case, let onKeyDown handle things
 	if ( keyCode < 0x20 || keyCode === 0x7f || event.ctrlKey || event.altKey || event.metaKey ) { return false ; }
-	
+
 	// So we have got a regular character, just emit it
-	
+
 	event.preventDefault() ;
 	//event.stopPropagation() ;
-	
+
 	/*
 	console.log( "keypress: " +
 		keyChar +
@@ -318,15 +312,10 @@ keyboard.onKeyPress = function( event )
 		']'
 	) ;
 	//*/
-	
+
 	this.remoteWin.childProcess.input( keyChar ) ;
 	//console.log( 'input keyChar: "' + keyChar + '"' ) ;
-	
+
 	// Important
 	return false;
 } ;
-
-
-
-
-
