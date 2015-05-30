@@ -54,8 +54,6 @@ Terminal.create = function create( options )
 	terminal.width = options.width || 80 ;
 	terminal.height = options.height || 24 ;
 
-	terminal.domContentTable = document.getElementById( 'contentTable' ) ;
-
 	terminal.domStyle = {
 		terminal: document.getElementById( 'terminalStyle' ) ,
 		palette: document.getElementById( 'paletteStyle' ) ,
@@ -130,7 +128,10 @@ Terminal.create = function create( options )
 Terminal.prototype.createLayout = function createLayout()
 {
 	this.terminalStyle() ;
-	Terminal.dom.init.call( this ) ;
+	Terminal.dom.init( this ) ;
+
+	document.addEventListener( 'keydown' , Terminal.keyboard.onKeyDown.bind( this ) , false ) ;
+	document.addEventListener( 'keypress' , Terminal.keyboard.onKeyPress.bind( this ) , false ) ;
 } ;
 
 
@@ -208,10 +209,6 @@ Terminal.prototype.start = function start()
 	// The terminal is ready: run the underlying process!
 	this.remoteWin.childProcess.run() ;
 	this.remoteWin.childProcess.on( 'output' , Terminal.prototype.onStdout.bind( this ) ) ;
-
-
-	document.addEventListener( 'keydown' , Terminal.keyboard.onKeyDown.bind( this ) , false ) ;
-	document.addEventListener( 'keypress' , Terminal.keyboard.onKeyPress.bind( this ) , false ) ;
 
 	this.blinkCursorTimeout() ;
 } ;
@@ -307,6 +304,7 @@ Terminal.prototype.updateCursor = function updateCursor( restoreCell , blink )
 
 	// Inverse the cell where the cursor is
 	attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] , this.cursor.screenInverse ) ;
+	console.log( this.cursor ) ;
 	Terminal.dom.setCell( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
 } ;
 
@@ -335,28 +333,12 @@ Terminal.prototype.printChar = function printChar( char )
 		}
 	}
 
-	// Update the internal state
-	this.state[ this.cursor.y - 1 ][ this.cursor.x - 1 ] = {
-		char: char ,
-		fgColor: this.cursor.fgColor ,
-		bgColor: this.cursor.bgColor ,
-		bold: this.cursor.bold ,
-		dim: this.cursor.dim ,
-		italic: this.cursor.italic ,
-		underline: this.cursor.underline ,
-		blink: this.cursor.blink ,
-		inverse: this.cursor.inverse ,
-		hidden: this.cursor.hidden ,
-		strike: this.cursor.strike
-	} ;
-
 	var attrs = {
-		char: char,
 		class: this.cursor.classAttr,
 		style: this.cursor.styleAttr
 	} ;
 
-	Terminal.dom.setCell( this.cursor.x - 1 , this.cursor.y - 1 , attrs ) ;
+	Terminal.dom.setCell( this.cursor.x - 1 , this.cursor.y - 1 , char , attrs ) ;
 
 	this.cursor.x ++ ;
 
@@ -369,20 +351,7 @@ Terminal.prototype.printChar = function printChar( char )
 
 Terminal.prototype.scrollDown = function scrollDown()
 {
-	var x , lastStateRow ;
-
-	// Delete the first row
-	this.state.shift() ;
-
-	// Create a new row at the end of the table
-	lastStateRow = this.state.length ;
-	this.state[ lastStateRow ] = [] ;
-
 	Terminal.dom.insertRow() ;
-	for ( x = 1 ; x <= this.width ; x ++ )
-	{
-		this.state[ lastStateRow ][ x - 1 ] = { char: ' ' } ;
-	}
 
 	// Update cursor's coordinate
 	this.cursor.y -- ;
@@ -475,11 +444,6 @@ Terminal.prototype.erase = function erase( type )
 	var x , y , attrs ,
 		yMin , yMax , xMinInline , xMaxInline , xMin , xMax ;
 
-	attrs = this.attrsFromObject( {
-		fgColor: this.cursor.fgColor ,
-		bgColor: this.cursor.bgColor
-	} ) ;
-
 	switch ( type )
 	{
 		case 'all' :
@@ -526,7 +490,7 @@ Terminal.prototype.erase = function erase( type )
 
 		default :
 			throw new Error( '.erase(): unknown type "' + type + '"' ) ;
-			return ;
+			return ; // jshint cryin 'bout unreachable return. Can we remove this line ?
 	}
 
 	for ( y = yMin ; y <= yMax ; y ++ )
@@ -536,13 +500,11 @@ Terminal.prototype.erase = function erase( type )
 
 		for ( x = xMin ; x <= xMax ; x ++ )
 		{
-			// We should create a unique object for each cell
-			this.state[ y - 1 ][ x - 1 ] = {
-				char: ' ' ,
+			attrs = this.attrsFromObject( {
 				fgColor: this.cursor.fgColor ,
 				bgColor: this.cursor.bgColor
-			} ;
-			attrs.char = ' ' ;
+			} ) ;
+
 			Terminal.dom.setCell( x - 1 , y - 1 , attrs ) ;
 		}
 	}
@@ -552,30 +514,14 @@ Terminal.prototype.erase = function erase( type )
 
 Terminal.prototype.delete = function delete_( n )
 {
-	var i , attrs ;
+	var i ;
 
 	if ( this.cursor.x > this.width ) { return ; }
 
 	if ( n === undefined ) { n = 1 ; }
 
-	attrs = this.attrsFromObject( {
-		fgColor: this.cursor.fgColor ,
-		bgColor: this.cursor.bgColor
-	} ) ;
-
 	for ( i = 0 ; i < n ; i ++ )
 	{
-		// Delete the cell
-		this.state[ this.cursor.y - 1 ].splice( this.cursor.x - 1 , 1 ) ;
-
-		// Create a new empty cell at the end of the row
-		// We should create a unique object for each cell
-		this.state[ this.cursor.y - 1 ].push( {
-			char: ' ' ,
-			fgColor: this.cursor.fgColor ,
-			bgColor: this.cursor.bgColor
-		} ) ;
-
 		Terminal.dom.deleteCell( this.cursor.x - 1 , this.cursor.y - 1 , attrs ) ;
 	}
 
@@ -586,31 +532,15 @@ Terminal.prototype.delete = function delete_( n )
 
 Terminal.prototype.insert = function insert( n )
 {
-	var i , attrs ;
+	var i ;
 
 	if ( this.cursor.x > this.width ) { return ; }
 
 	if ( n === undefined ) { n = 1 ; }
 
-	attrs = this.attrsFromObject( {
-		fgColor: this.cursor.fgColor ,
-		bgColor: this.cursor.bgColor
-	} ) ;
-
 	for ( i = 0 ; i < n ; i ++ )
 	{
-		// Delete the last cell
-		this.state[ this.cursor.y - 1 ].pop() ;
-
-		// Create a new empty cell at the cursor position
-		// We should create a unique object for each cell
-		this.state[ this.cursor.y - 1 ].splice( this.cursor.x - 1 , 0 , {
-			char: ' ' ,
-			fgColor: this.cursor.fgColor ,
-			bgColor: this.cursor.bgColor
-		} ) ;
-
-		Terminal.dom.insertCell( this.cursor.x - 1 , this.cursor.y - 1 , attrs ) ;
+		Terminal.dom.insertCell( this.cursor.x - 1 , this.cursor.y - 1 ) ;
 	}
 
 	this.cursor.screenX += n ;
@@ -622,35 +552,13 @@ Terminal.prototype.insert = function insert( n )
 
 Terminal.prototype.deleteLine = function deleteLine( n )
 {
-	var i , x , lastStateRow , attrs ;
+	var i ;
 
 	if ( n === undefined ) { n = 1 ; }
 
-	attrs = this.attrsFromObject( {
-		fgColor: this.cursor.fgColor ,
-		bgColor: this.cursor.bgColor
-	} ) ;
-
 	for ( i = 0 ; i < n ; i ++ )
 	{
-		// Delete the row
-		this.state.splice( this.cursor.y - 1 , 1 ) ;
-
-		Terminal.dom.deleteRow( n ) ;
-
-		// Create a new row at the end of the table
-		lastStateRow = this.state.length ;
-		this.state[ lastStateRow ] = [] ;
-
-		for ( x = 1 ; x <= this.width ; x ++ )
-		{
-			// We should create a unique object for each cell
-			this.state[ lastStateRow ][ x - 1 ] = {
-				char: ' ' ,
-				fgColor: this.cursor.fgColor ,
-				bgColor: this.cursor.bgColor
-			} ;
-		}
+		Terminal.dom.deleteRow( this.cursor.y - 1 ) ;
 	}
 
 	this.cursor.updateNeeded = true ;
@@ -660,34 +568,13 @@ Terminal.prototype.deleteLine = function deleteLine( n )
 
 Terminal.prototype.insertLine = function insertLine( n )
 {
-	var i , x , attrs ;
+	var i ;
 
 	if ( n === undefined ) { n = 1 ; }
 
-	attrs = this.attrsFromObject( {
-		fgColor: this.cursor.fgColor ,
-		bgColor: this.cursor.bgColor
-	} ) ;
-
 	for ( i = 0 ; i < n ; i ++ )
 	{
-		// Delete the last row
-		this.state.pop() ;
-
-		Terminal.dom.insertRow( n ) ;
-
-		// Create a new row where the cursor is
-		this.state.splice( this.cursor.y - 1 , 0 , [] ) ;
-
-		for ( x = 1 ; x <= this.width ; x ++ )
-		{
-			// We should create a unique object for each cell
-			this.state[ this.cursor.y - 1 ][ x - 1 ] = {
-				char: ' ' ,
-				fgColor: this.cursor.fgColor ,
-				bgColor: this.cursor.bgColor
-			} ;
-		}
+		Terminal.dom.insertRow( this.cursor.y - 1 ) ;
 	}
 
 	this.cursor.screenY += n ;
