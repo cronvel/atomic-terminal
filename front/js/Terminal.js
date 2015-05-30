@@ -521,7 +521,7 @@ Terminal.prototype.delete = function delete_( n )
 
 	for ( i = 0 ; i < n ; i ++ )
 	{
-		Terminal.dom.deleteCell( this.cursor.x - 1 , this.cursor.y - 1 , attrs ) ;
+		Terminal.dom.deleteCell( this.cursor.x - 1 , this.cursor.y - 1 ) ;
 	}
 
 	this.cursor.updateNeeded = true ;
