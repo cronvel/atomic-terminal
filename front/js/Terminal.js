@@ -285,7 +285,7 @@ Terminal.prototype.updateCursor = function updateCursor( restoreCell , blink )
 	{
 		// Restore the previous cell with the correct attributes
 		attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] ) ;
-		Terminal.dom.setCell( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
+		Terminal.dom.setCursor( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
 	}
 
 	// Update the screenX and screenY
@@ -304,8 +304,7 @@ Terminal.prototype.updateCursor = function updateCursor( restoreCell , blink )
 
 	// Inverse the cell where the cursor is
 	attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] , this.cursor.screenInverse ) ;
-	console.log( this.cursor ) ;
-	Terminal.dom.setCell( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
+	Terminal.dom.setCursor( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
 } ;
 
 
@@ -505,7 +504,7 @@ Terminal.prototype.erase = function erase( type )
 				bgColor: this.cursor.bgColor
 			} ) ;
 
-			Terminal.dom.setCell( x - 1 , y - 1 , attrs ) ;
+			Terminal.dom.setCell( x - 1 , y - 1 , ' ' , attrs ) ;
 		}
 	}
 } ;

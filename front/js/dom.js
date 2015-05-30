@@ -156,14 +156,13 @@ dom.deleteCell = function( x , y ) {
 	Terminal.state[ y ].push( dom.cellArray() ) ;
 } ;
 
+dom.setCursor = function( x , y , attrs ) {
+	dom.setCell( x , y , false , attrs ) ;
+} ;
+
 // If attrs is not an object, attrs is just a char,
 // and fgColor, bgColor are set by default
 dom.setCell = function( x , y , char , attrs ) {
-	if ( typeof char !== 'string' ) {
-		attrs = char ;
-		char = null ;
-	}
-
 	var cell = dom.getCell( x , y ) ;
 
 	if ( char ) {
@@ -172,7 +171,8 @@ dom.setCell = function( x , y , char , attrs ) {
 
 	// need to change this in the futur,
 	// just set the needed class, not allways fgColor & bgColor
-	if ( attrs.class && ( Terminal.cursor.fgColor !== false || Terminal.cursor.bgColor !== false )  ) {
+	if ( attrs.class ) {
+	// if ( attrs.class && ( Terminal.cursor.fgColor !== false || Terminal.cursor.bgColor !== false )  ) {
 		cell.className = attrs.class ;
 	}
 
