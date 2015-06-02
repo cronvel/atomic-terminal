@@ -40,7 +40,6 @@ module.exports = Terminal ;
 // Submodule parts
 Terminal.csi = require( './csi.js' ) ;
 Terminal.osc = require( './osc.js' ) ;
-Terminal.keyboard = require( './keyboard.js' ) ;
 Terminal.dom = require( './dom.js' ) ;
 
 
@@ -92,16 +91,13 @@ Terminal.create = function create( options )
 		screenInverse: false ,
 		screenHidden: false ,
 
-		blinkTimer: undefined ,
 		blinkTimeout: 500 ,
 		steadyTimeout: 1000	,	// Time before blinking again
 
-		updateNeeded: false ,
-		restoreCellNeeded: false
+		updateNeeded: false
 	} ;
 
 	terminal.savedCursorPosition = { x: 1 , y: 1 } ;
-	terminal.blinkCursorTimeout = blinkCursorTimeout.bind( terminal ) ;
 
 	terminal.state = [] ;
 
@@ -118,22 +114,11 @@ Terminal.create = function create( options )
 	terminal.paletteStyle( true , true ) ;
 
 	terminal.updateAttrs() ;
-	terminal.createLayout() ;
+
+	Terminal.dom.init( terminal ) ;
 
 	return terminal ;
 } ;
-
-
-
-Terminal.prototype.createLayout = function createLayout()
-{
-	this.terminalStyle() ;
-	Terminal.dom.init( this ) ;
-
-	document.addEventListener( 'keydown' , Terminal.keyboard.onKeyDown.bind( this ) , false ) ;
-	document.addEventListener( 'keypress' , Terminal.keyboard.onKeyPress.bind( this ) , false ) ;
-} ;
-
 
 
 Terminal.prototype.terminalStyle = function terminalStyle()
@@ -150,12 +135,11 @@ Terminal.prototype.terminalStyle = function terminalStyle()
 		'\theight: ' + this.height * this.cell.height + 'px;\n' +
 		'}\n' ;
 
-	css += '#contentTable td {\n' +
-		'\twidth: ' + this.cell.width + 'px;\n' +
+	css += '#contentTable div {\n' +
 		'\theight: ' + this.cell.height + 'px;\n' +
 		'}\n' ;
 
-	css += '#contentTable td div {\n' +
+	css += '#contentTable span {\n' +
 		'\twidth: ' + this.cell.width + 'px;\n' +
 		'\theight: ' + this.cell.height + 'px;\n' +
 		'}\n' ;
@@ -209,8 +193,6 @@ Terminal.prototype.start = function start()
 	// The terminal is ready: run the underlying process!
 	this.remoteWin.childProcess.run() ;
 	this.remoteWin.childProcess.on( 'output' , Terminal.prototype.onStdout.bind( this ) ) ;
-
-	this.blinkCursorTimeout() ;
 } ;
 
 
@@ -233,12 +215,23 @@ Terminal.prototype.updateAttrs = function updateAttrs()
 } ;
 
 
+// Extra 'inverse' is used for cursor update, to not have to clone the object...
+Terminal.prototype.attrsFromObject2 = function attrsFromObject2()
+{
+	return {
+		fgColor:this.defaultFgColorIndex,
+		bgColor:this.defaultBgColorIndex,
+		class: 'fgColor'+this.defaultFgColorIndex+' bgColor'+ this.defaultBgColorIndex,
+		style: null
+	} ;
+} ;
 
 // Extra 'inverse' is used for cursor update, to not have to clone the object...
+/* COPY, to remove once new function finalized */
 Terminal.prototype.attrsFromObject = function attrsFromObject( object , inverse )
 {
 	var fgColor , bgColor , attr = [] , style = [] , tmp ;
-
+// console.log( object ) ;
 	fgColor = object.fgColor || object.fgColor === 0 ? object.fgColor : this.defaultFgColorIndex ;
 	bgColor = object.bgColor || object.bgColor === 0 ? object.bgColor : this.defaultBgColorIndex ;
 
@@ -260,6 +253,8 @@ Terminal.prototype.attrsFromObject = function attrsFromObject( object , inverse 
 	else { attr.push( 'bgColor' + bgColor ) ; }
 
 	return {
+		fgColor:fgColor,
+		bgColor:bgColor,
 		class: attr.join( ' ' ) || null ,
 		style: style.join( ' ' ) || null
 	} ;
@@ -267,55 +262,19 @@ Terminal.prototype.attrsFromObject = function attrsFromObject( object , inverse 
 
 
 
-// blink: called by a blinking cursor method
-Terminal.prototype.updateCursor = function updateCursor( restoreCell , blink )
+Terminal.prototype.updateCursor = function updateCursor()
 {
-	var attrs ;
-
-	// Check if something has changed, or if the cursor is visible or not
-	if ( this.cursor.screenHidden ||
-		( ! blink && this.cursor.x === this.cursor.screenX && this.cursor.y === this.cursor.screenY ) )
-	{
-		return ;
-	}
-
-	if ( restoreCell &&
-		this.cursor.screenX >= 1 && this.cursor.screenX <= this.width &&
-		this.cursor.screenY >= 1 && this.cursor.screenY <= this.height )
-	{
-		// Restore the previous cell with the correct attributes
-		attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] ) ;
-		Terminal.dom.setCursor( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
-	}
-
-	// Update the screenX and screenY
 	this.cursor.screenX = this.cursor.x ;
 	this.cursor.screenY = this.cursor.y ;
 
+	if ( this.cursor.screenHidden ) {
+		Terminal.dom.hideCursor() ;
+	}
 
 	if ( this.cursor.x > this.width ) { return ; }
 
-	if ( ! blink && this.cursor.blinkTimer )
-	{
-		this.cursor.screenInverse = true ;
-		clearTimeout( this.cursor.blinkTimer ) ;
-		this.cursor.blinkTimer = setTimeout( this.blinkCursorTimeout , this.cursor.steadyTimeout ) ;
-	}
-
-	// Inverse the cell where the cursor is
-	attrs = this.attrsFromObject( this.state[ this.cursor.screenY - 1 ][ this.cursor.screenX - 1 ] , this.cursor.screenInverse ) ;
-	Terminal.dom.setCursor( this.cursor.screenX - 1 , this.cursor.screenY - 1 , attrs ) ;
+	Terminal.dom.setCursor( this.cursor.screenX - 1 , this.cursor.screenY - 1 ) ;
 } ;
-
-
-
-function blinkCursorTimeout()
-{
-	this.cursor.screenInverse = ! this.cursor.screenInverse ;
-	this.updateCursor( false , true ) ;
-	this.cursor.blinkTimer = setTimeout( this.blinkCursorTimeout , this.cursor.blinkTimeout ) ;
-}
-
 
 
 Terminal.prototype.printChar = function printChar( char )
@@ -373,7 +332,6 @@ Terminal.prototype.newLine = function newLine( carriageReturn )
 	}
 
 	this.cursor.updateNeeded = true ;
-	this.cursor.restoreCellNeeded = true ;
 
 	//console.log( [ this.cursor.x , this.cursor.y ] ) ;
 } ;
@@ -395,7 +353,6 @@ Terminal.prototype.moveTo = function moveTo( x , y )
 	}
 
 	this.cursor.updateNeeded = true ;
-	this.cursor.restoreCellNeeded = true ;
 
 	//console.log( '> moveTo coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
@@ -417,7 +374,6 @@ Terminal.prototype.move = function move( x , y )
 	}
 
 	this.cursor.updateNeeded = true ;
-	this.cursor.restoreCellNeeded = true ;
 
 	//console.log( '> move coordinate: (' + this.cursor.x + ',' + this.cursor.y + ')' ) ;
 } ;
@@ -489,7 +445,6 @@ Terminal.prototype.erase = function erase( type )
 
 		default :
 			throw new Error( '.erase(): unknown type "' + type + '"' ) ;
-			return ; // jshint cryin 'bout unreachable return. Can we remove this line ?
 	}
 
 	for ( y = yMin ; y <= yMax ; y ++ )
@@ -503,12 +458,60 @@ Terminal.prototype.erase = function erase( type )
 				fgColor: this.cursor.fgColor ,
 				bgColor: this.cursor.bgColor
 			} ) ;
-
 			Terminal.dom.setCell( x - 1 , y - 1 , ' ' , attrs ) ;
 		}
 	}
 } ;
 
+
+Terminal.prototype.insertLine = function insertLine( n )
+{
+	var i ;
+
+	if ( n === undefined ) { n = 1 ; }
+
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		Terminal.dom.insertRow( this.cursor.y - 1 ) ;
+	}
+
+	this.cursor.screenY += n ;
+	this.cursor.updateNeeded = true ;
+} ;
+
+
+
+Terminal.prototype.deleteLine = function deleteLine( n )
+{
+	var i ;
+
+	if ( n === undefined ) { n = 1 ; }
+
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		Terminal.dom.deleteRow( this.cursor.y - 1 ) ;
+	}
+
+	this.cursor.updateNeeded = true ;
+} ;
+
+
+Terminal.prototype.insert = function insert( n )
+{
+	var i ;
+
+	if ( this.cursor.x > this.width ) { return ; }
+
+	if ( n === undefined ) { n = 1 ; }
+
+	for ( i = 0 ; i < n ; i ++ )
+	{
+		Terminal.dom.insertCell( this.cursor.x - 1 , this.cursor.y - 1 ) ;
+	}
+
+	this.cursor.screenX += n ;
+	this.cursor.updateNeeded = true ;
+} ;
 
 
 Terminal.prototype.delete = function delete_( n )
@@ -529,61 +532,6 @@ Terminal.prototype.delete = function delete_( n )
 
 
 
-Terminal.prototype.insert = function insert( n )
-{
-	var i ;
-
-	if ( this.cursor.x > this.width ) { return ; }
-
-	if ( n === undefined ) { n = 1 ; }
-
-	for ( i = 0 ; i < n ; i ++ )
-	{
-		Terminal.dom.insertCell( this.cursor.x - 1 , this.cursor.y - 1 ) ;
-	}
-
-	this.cursor.screenX += n ;
-	this.cursor.updateNeeded = true ;
-	this.cursor.restoreCellNeeded = true ;
-} ;
-
-
-
-Terminal.prototype.deleteLine = function deleteLine( n )
-{
-	var i ;
-
-	if ( n === undefined ) { n = 1 ; }
-
-	for ( i = 0 ; i < n ; i ++ )
-	{
-		Terminal.dom.deleteRow( this.cursor.y - 1 ) ;
-	}
-
-	this.cursor.updateNeeded = true ;
-} ;
-
-
-
-Terminal.prototype.insertLine = function insertLine( n )
-{
-	var i ;
-
-	if ( n === undefined ) { n = 1 ; }
-
-	for ( i = 0 ; i < n ; i ++ )
-	{
-		Terminal.dom.insertRow( this.cursor.y - 1 ) ;
-	}
-
-	this.cursor.screenY += n ;
-	this.cursor.updateNeeded = true ;
-	this.cursor.restoreCellNeeded = true ;
-} ;
-
-
-
-
 
 			/* STDOUT parsing */
 
@@ -596,7 +544,6 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 
 	// Reset cursor update
 	this.cursor.updateNeeded = false ;
-	this.cursor.restoreCellNeeded = false ;
 
 	//if ( ! Buffer.isBuffer( chunk ) ) { throw new Error( 'not a buffer' ) ; }
 	//console.log( 'Chunk: \n' + string.inspect( { style: 'color' } , chunk ) ) ;
@@ -664,7 +611,7 @@ Terminal.prototype.onStdout = function onStdout( chunk )
 
 	this.onStdoutRemainder = null ;
 
-	if ( this.cursor.updateNeeded ) { this.updateCursor( this.cursor.restoreCellNeeded ) ; }
+	if ( this.cursor.updateNeeded ) { this.updateCursor() ; }
 } ;
 
 

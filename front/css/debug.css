@@ -1,0 +1,28 @@
+[data-debug] {
+	-webkit-animation-duration: 2000ms;
+	-webkit-animation-iteration-count: 1;
+	-webkit-animation-fill-mode: backwards;
+	-webkit-animation-delay: 500ms;
+}
+
+
+[data-debug="cell"] {-webkit-animation-name: cell; }
+[data-debug="char"] {-webkit-animation-name: char; }
+[data-debug="class"] {-webkit-animation-name: class; }
+[data-debug="new"] {-webkit-animation-name: new; }
+@-webkit-keyframes cell {
+	from { background-color: blue; }
+    to { background-color: rgba(0,0,0,0); }
+}
+@-webkit-keyframes char {
+	from { background-color: red; }
+    to { background-color: rgba(0,0,0,0); }
+}
+@-webkit-keyframes class {
+	from { background-color: pink; }
+    to { background-color: rgba(0,0,0,0); }
+}
+@-webkit-keyframes new {
+	from { background-color: green; }
+    to { background-color: rgba(0,0,0,0); }
+}

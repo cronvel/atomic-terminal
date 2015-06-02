@@ -1,115 +1,63 @@
+/*
+	TODO:
+	- add a nice font
+
+	- Paste with ctrl-v add a strange char at the end (on visible after backspace)
+		work great with middle click
+
+	- Set the size of the terminal by dom
+
+	- Optimise Terminal.prototype.attrsFromObject: too many recompile due to type change
+
+	- Set css in this file
+*/
+
 var dom = {} ;
 module.exports = dom ;
 
-
-var type = {
-	parent:'table',
-	row:'tr',
-	cell:'td'
-} ;
-
-
-/*
-	TODO:
-	- Set the size of the terminal by dom
-
-	- Set css in this file
-
-	- Change the cursor to not have to restore cell
-		after his passage but just have an overriding css class to remove
-
-
-	- Terminal.prototype.insertLine and Terminal.prototype.deleteLine
-		share big chunk of code : refactor!
-		THE SAME FOR insert and delete
-
-
-	??? In the internal state, if the cell is default, use a reference to link it's property
-		BUT BE careful, don't modify this object directly, when modifiyng a default, always
-		create a new object
-*/
-
-
 // ref to the main Terminal object, set in dom.init
 var Terminal ;
+var keyboard = require( './keyboard.js' ) ;
 
-
-dom.cellFragment = {} ;
-dom.rowFragment = {} ;
-
-dom.createFragments = function() {
-	dom.$main = document.createElement( type.parent ) ;
-	dom.$main.id = 'contentTable' ;
-	document.body.appendChild( dom.$main ) ;
-
-
-	dom.cellFragment = document.createDocumentFragment() ;
-	// var div = document.createElement( 'div' ) ;
-	// div.className = 'fgColor' + this.defaultFgColorIndex + ' bgColor' + this.defaultBgColorIndex ;
-
-	var cell = document.createElement( type.cell ) ;
-	// cell.appendChild( div ) ;
-	dom.cellFragment.appendChild( cell ) ;
-
-
-
-	dom.rowFragment = document.createDocumentFragment() ;
-	var row = document.createElement( type.row ) ;
-
-	for ( var x = 1 ; x <= Terminal.width ; x ++ )
-	{
-		row.appendChild( dom.cellFragment.cloneNode( true ) ) ;
-	}
-
-	dom.rowFragment.appendChild( row ) ;
+var type = {
+	parent:'div',
+	row:'div',
+	cell:'span'
 } ;
 
-dom.cellArray = function() {
-	return {
-		char: ' ' ,
-		fgColor: Terminal.cursor.fgColor ,
-		bgColor: Terminal.cursor.bgColor
-	} ;
-} ;
-dom.rowArray = function() {
-	var arr = [] ;
 
-	for ( var x = 1 ; x <= Terminal.width ; x ++ )
-	{
-		arr.push( dom.cellArray ) ;
-	}
-	return arr ;
-} ;
+/* ************** */
+/* Init functions */
+/* ************** */
 
 dom.init = function( terminal ) {
 	Terminal = terminal ;
 
-	dom.createFragments() ;
-	dom.fill() ;
+	terminal.terminalStyle() ;
+
+	dom.createLayout() ;
 	dom.events() ;
+
+	css.initCursor() ;
 } ;
 
+dom.createLayout = function() {
+	dom.$main = document.createElement( type.parent ) ;
+	dom.$main.id = 'contentTable' ;
+	dom.$main.className = 'fgColor' + Terminal.defaultFgColorIndex + ' bgColor' + Terminal.defaultBgColorIndex ;
+	dom.$main.appendChild( fragments.full() ) ;
+	document.body.appendChild( dom.$main ) ;
+} ;
 
 dom.events = function() {
-	return;
-
-	// next use this function to set events
-	dom.$main.addEventListener( 'keydown' , Terminal.keyboard.onKeyDown.bind( Terminal ) , false ) ;
-	dom.$main.addEventListener( 'keypress' , Terminal.keyboard.onKeyPress.bind( Terminal ) , false ) ;
+	document.addEventListener( 'keydown' , keyboard.onKeyDown.bind( Terminal ) , false ) ;
+	document.addEventListener( 'keypress' , keyboard.onKeyPress.bind( Terminal ) , false ) ;
+	document.addEventListener( 'paste' , keyboard.onPaste.bind( Terminal ) , false ) ;
 } ;
 
-
-dom.fill = function() {
-	var fragment = document.createDocumentFragment() ;
-
-	for ( var y = 1 ; y <= Terminal.height ; y ++ )
-	{
-		Terminal.state.push( dom.rowArray() ) ;
-		fragment.appendChild( dom.rowFragment.cloneNode( true ) ) ;
-	}
-	dom.$main.className = 'fgColor' + Terminal.defaultFgColorIndex + ' bgColor' + Terminal.defaultBgColorIndex ;
-	dom.$main.appendChild( fragment.cloneNode( true ) ) ;
-} ;
+/* ************** */
+/* Main functions */
+/* ************** */
 
 dom.insertRow = function( y ) {
 	if ( y === undefined ) {
@@ -117,7 +65,7 @@ dom.insertRow = function( y ) {
 	}
 	else {
 		dom.$main.removeChild( dom.$main.children[ -1 ] ) ;
-		dom.$main.insertBefore( dom.rowFragment.cloneNode( true ) , dom.$main.children[ y ] ) ;
+		dom.$main.insertBefore( fragments.row() , dom.$main.children[ y ] ) ;
 
 		Terminal.state.pop() ;
 		Terminal.state.splice( y , 0 , dom.rowArray() ) ;
@@ -125,11 +73,10 @@ dom.insertRow = function( y ) {
 } ;
 
 dom.insertCell = function( x , y ) {
-	/* insertCell cree une cellule, sans setter de default */
-	var cell = dom.getCell( x , y ) ;
-	var parentCell = cell.parentNode ;
+	var cell = dom.getCell( x , y ) ,
+		parentCell = cell.parentNode ;
 
-	parentCell.insertBefore( dom.cellFragment.cloneNode( true ) , cell ) ;
+	parentCell.insertBefore( fragments.cell() , cell ) ;
 	parentCell.removeChild( cell.parentNode.lastChild ) ;
 
 	Terminal.state[ y ].pop() ;
@@ -139,50 +86,52 @@ dom.insertCell = function( x , y ) {
 
 dom.deleteRow = function( y ) {
 	dom.$main.removeChild( dom.$main.children[ y ] ) ;
-	dom.$main.appendChild( dom.rowFragment.cloneNode( true ) ) ;
+	dom.$main.appendChild( fragments.row() ) ;
 
 	Terminal.state.splice( y , 1 ) ;
 	Terminal.state.push( dom.rowArray() ) ;
 } ;
 
 dom.deleteCell = function( x , y ) {
-	var cell = dom.getCell( x , y ) ;
-	var parent = cell.parentNode ;
-	parent.removeChild( cell ) ;
+	var cell = dom.getCell( x , y ) ,
+		parent = cell.parentNode ;
 
-	parent.appendChild( dom.cellFragment.cloneNode( true ) ) ;
+	parent.removeChild( cell ) ;
+	parent.appendChild( fragments.cell() ) ;
 
 	Terminal.state[ y ].splice( x , 1 ) ;
 	Terminal.state[ y ].push( dom.cellArray() ) ;
 } ;
 
-dom.setCursor = function( x , y , attrs ) {
-	dom.setCell( x , y , false , attrs ) ;
-} ;
-
-// If attrs is not an object, attrs is just a char,
-// and fgColor, bgColor are set by default
 dom.setCell = function( x , y , char , attrs ) {
-	var cell = dom.getCell( x , y ) ;
+	var state = Terminal.state[ y ][ x ] ,
+		cell = dom.getCell( x , y ) ;
 
-	if ( char ) {
-		cell.textContent = char ;
+	if ( attrs.class !== state.class ) {
+		cell.className = attrs.class ;
 	}
 
-	// need to change this in the futur,
-	// just set the needed class, not allways fgColor & bgColor
-	if ( attrs.class ) {
-	// if ( attrs.class && ( Terminal.cursor.fgColor !== false || Terminal.cursor.bgColor !== false )  ) {
-		cell.className = attrs.class ;
+	if ( char ) {
+	// if ( char !== state.char ) {
+		cell.textContent = char ;
 	}
 
 	if ( attrs.style ) {
 		cell.style = attrs.style ;
 	}
 
+	if ( debug.state ) {
+		if ( attrs.class !== state.class || char ) {
+			debug.cell( cell , 'cell' ) ;
+		}
+
+	}
+
 	// Update the internal state
 	Terminal.state[ y ][ x ] = {
 		char: char ,
+		class: attrs.class ,
+
 		fgColor: Terminal.cursor.fgColor ,
 		bgColor: Terminal.cursor.bgColor ,
 		bold: Terminal.cursor.bold ,
@@ -198,4 +147,166 @@ dom.setCell = function( x , y , char , attrs ) {
 
 dom.getCell = function( x , y ) {
 	return dom.$main.children[ y ].children[ x ] ;
+} ;
+
+dom.cursor = false ;
+dom.setCursor = function( x , y ) {
+	var cell = dom.getCell( x , y ) ,
+		state = Terminal.state[ y ][ x ] ;
+
+	if ( dom.cursor ) {
+		dom.cursor.classList.remove('cursor') ;
+	}
+	dom.cursor = cell ;
+	cell.classList.add('cursor') ;
+	css.setCursor( state.fgColor || Terminal.defaultFgColorIndex , state.bgColor || Terminal.defaultBgColorIndex ) ;
+} ;
+
+dom.hideCursor = function() {
+	if ( dom.cursor ) {
+		dom.cursor.classList.remove('cursor') ;
+	}
+} ;
+
+
+/* **************************** */
+/* "Need to be moved" functions */
+/* **************************** */
+
+dom.cellArray = function() {
+	return {
+		char: ' ' ,
+		fgColor: Terminal.cursor.fgColor ,
+		bgColor: Terminal.cursor.bgColor
+	} ;
+} ;
+dom.rowArray = function() {
+	var arr = [] ;
+
+	for ( var x = 1 ; x <= Terminal.width ; x ++ ) {
+		arr.push( dom.cellArray() ) ;
+	}
+	return arr ;
+} ;
+
+
+/* *********** */
+/* CSS related */
+/* *********** */
+
+var css = {} ;
+
+css.cursor = {
+	stylesheet: {} ,
+	color:'',
+	backgroundColor:''
+} ;
+
+css.initCursor = function() {
+	var styleEl = document.createElement('style') ;
+
+	document.head.appendChild(styleEl);
+
+	css.cursor.stylesheet = styleEl.sheet;
+
+	css.cursor.stylesheet.insertRule( '.cursor { color:#000;  }' , 0 ) ;
+	css.cursor.stylesheet.insertRule( '@-webkit-keyframes blink { 50%  { background-color:#000 ; color:rgb(170,170,170) ; } }' , 1 ) ;
+} ;
+
+
+css.setCursor = function( color , backgroundColor ) {
+	if ( color !== css.cursor.color ) {
+		css.cursor.color = color ;
+		color = 'rgb(' + Terminal.palette[ color ].r +','+ Terminal.palette[ color ].g +','+ Terminal.palette[ color ].b + ')';
+
+		css.cursor.stylesheet.cssRules[0].style.backgroundColor = color ;
+		css.cursor.stylesheet.cssRules[1].cssRules[0].style.color = color ;
+	}
+	if ( backgroundColor !== css.cursor.backgroundColor ) {
+		css.cursor.backgroundColor = backgroundColor ;
+		backgroundColor = 'rgb(' + Terminal.palette[ backgroundColor ].r +','+ Terminal.palette[ backgroundColor ].g +','+ Terminal.palette[ backgroundColor ].b + ')';
+
+		css.cursor.stylesheet.cssRules[0].style.color = backgroundColor ;
+		css.cursor.stylesheet.cssRules[1].cssRules[0].style.backgroundColor = backgroundColor ;
+	}
+} ;
+
+
+
+/* **************************** */
+/* Fragments used in the layout */
+/* **************************** */
+
+var fragments = {
+	cachedFull: false ,
+	cachedRow: false ,
+	cachedCell: false ,
+
+	reset: function() {
+		this.cachedFull = false ;
+		this.cachedRow = false ;
+		this.cachedCell = false ;
+	} ,
+
+	full: function() {
+		if ( ! this.cachedFull ) {
+			this.cachedFull = document.createDocumentFragment() ;
+
+			for ( var y = 1 ; y <= Terminal.height ; y ++ )	{
+				Terminal.state.push( dom.rowArray() ) ;
+				this.cachedFull.appendChild( this.row() ) ;
+			}
+		}
+
+		return this.cachedFull.cloneNode( true ) ;
+	} ,
+
+	row: function() {
+		if ( ! this.cachedRow ) {
+			this.cachedRow = document.createDocumentFragment() ;
+			var row = document.createElement( type.row ) ;
+
+			for ( var x = 1 ; x <= Terminal.width ; x ++ ) {
+				row.appendChild( this.cell() ) ;
+			}
+
+			this.cachedRow.appendChild( row ) ;
+		}
+
+		var clone = this.cachedRow.cloneNode( true ) ;
+
+		if ( debug.state ) {
+			clone.setAttribute('data-debug','new') ;
+		}
+		return clone ;
+	} ,
+
+	cell: function() {
+		if ( ! this.cachedCell ) {
+			this.cachedCell = document.createDocumentFragment() ;
+
+			var cell = document.createElement( type.cell ) ;
+			this.cachedCell.appendChild( cell ) ;
+		}
+
+		var clone = this.cachedCell.cloneNode( true ) ;
+
+		if ( debug.state ) {
+			clone.setAttribute('data-debug','new') ;
+		}
+		return clone ;
+	}
+} ;
+
+
+var debug = {
+	state:false,
+	cell: function( cell , value ) {
+		cell.removeAttribute('data-debug' ) ;
+
+		// to trigger new the animation
+		setTimeout( function() {
+			cell.setAttribute('data-debug',value ) ;
+		} , 0 ) ;
+	}
 } ;

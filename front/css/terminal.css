@@ -5,16 +5,24 @@
 	padding: 0;
 }
 
-#contentTable td {
+#contentTable div {
 	margin: 0px;
 	padding: 0px;
 	border: none;
 }
 
-#contentTable td div {
+#contentTable span {
+	display: inline-block;
+	vertical-align: bottom;
 	overflow: visible;
 	text-align: center;
 }
+
+.cursor {
+	animation: blink 1500ms step-start 1000ms infinite;
+	-webkit-animation: blink 1500ms step-start 1000ms infinite;
+}
+
 
 .bold {
 	font-weight: bold;

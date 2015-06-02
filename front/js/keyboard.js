@@ -319,3 +319,10 @@ keyboard.onKeyPress = function( event )
 	// Important
 	return false;
 } ;
+
+
+keyboard.onPaste = function( event )
+{
+	this.remoteWin.childProcess.input( event.clipboardData.getData('text') ) ;
+	// return false;
+} ;
